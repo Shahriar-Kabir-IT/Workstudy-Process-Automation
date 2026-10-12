@@ -6,7 +6,7 @@
 
 [![Status](https://img.shields.io/badge/status-in%20planning-blue?style=for-the-badge)](#-roadmap)
 [![Version](https://img.shields.io/badge/SRS-v0.2-success?style=for-the-badge)](#-documentation)
-[![License](https://img.shields.io/badge/license-TBD-lightgrey?style=for-the-badge)](#-license)
+[![License](https://img.shields.io/badge/license-MIT-green?style=for-the-badge)](#-license)
 
 ![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)
@@ -168,13 +168,17 @@ npm run db:seed             # seeds factories + demo style (cargo pant 10339347)
 
 Developed for the **Work Study / Industrial Engineering** department of **Ananta Companies** (AGL · AJL · ABM) to standardize and automate line engineering across factories.
 
-## 🤝 Contributing
+## 👤 Author
 
-Contributions, issues, and feature requests are welcome! Please open an [issue](https://github.com/Shahriar-Kabir-IT/Workstudy-Process-Automation/issues) to discuss changes.
+Designed and developed solely by **Md. Shahriar Kabir**.
+
+[![GitHub](https://img.shields.io/badge/GitHub-Shahriar--Kabir--IT-181717?style=flat-square&logo=github)](https://github.com/Shahriar-Kabir-IT)
 
 ## 📄 License
 
-License to be determined. © Ananta Companies.
+This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
+
+© 2026 Md. Shahriar Kabir
 
 ---
 
