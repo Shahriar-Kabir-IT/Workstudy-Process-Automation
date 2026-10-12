@@ -1,0 +1,26 @@
+# Excel source templates & data — keep out of git
+*.xlsx
+*.xls
+*.xlsm
+*.csv
+
+# SRS / internal documents — keep out of git
+SRS.md
+*.docx
+*.dotx
+*.pdf
+
+# OS / editor junk
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# Node / build
+node_modules/
+dist/
+build/
+.env
+.env.*
+!.env.example
