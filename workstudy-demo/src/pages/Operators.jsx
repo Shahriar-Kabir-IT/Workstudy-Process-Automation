@@ -4,7 +4,7 @@ import * as XLSX from 'xlsx'
 import { useStore } from '../store.jsx'
 import { Topbar } from '../components/Shell.jsx'
 import { Card, Badge, Note } from '../components/ui.jsx'
-import { FACTORIES } from '../data/seed.js'
+import { FACTORIES, lineCount } from '../data/seed.js'
 
 // find a value in a row object by fuzzy header match
 const pick = (row, rx) => {
@@ -13,7 +13,7 @@ const pick = (row, rx) => {
 }
 
 export default function Operators() {
-  const { user, operators, operatorsFor, setOperators, addOperators } = useStore()
+  const { user, operatorsFor, replaceFactoryOperators, appendOperators, clearFactoryOperators } = useStore()
   const nav = useNavigate()
   const fileRef = useRef(null)
   const facOptions = user.crossFactory ? FACTORIES : FACTORIES.filter(f => f.code === user.factory)
@@ -38,18 +38,17 @@ export default function Operators() {
           const name = String(pick(r, /name|operator|worker/) ?? '').trim()
           const id = String(pick(r, /\bid\b|code|card|emp/) ?? '').trim() || `${factory}-${Date.now().toString(36)}-${i}`
           const grade = String(pick(r, /grade|skill/) ?? 'B').trim() || 'B'
+          const floor = String(pick(r, /floor/) ?? '').trim()
           const line = String(pick(r, /line/) ?? '').trim()
-          return { id, name, grade, line, factory }
+          const machine = String(pick(r, /machine|m\/c/) ?? '').trim()
+          return { id, name, grade, floor, line, machine, factory }
         }).filter(o => o.name)
-        if (!parsed.length) { setErr('Could not find a Name column. Expected headers like: ID, Name, Grade, Line.'); return }
+        if (!parsed.length) { setErr('Could not find a Name column. Expected headers: ID, Name, Grade, Floor, Line, Machine.'); return }
 
-        if (mode === 'replace') {
-          const others = operators.filter(o => o.factory !== factory)
-          setOperators([...others, ...parsed])
-        } else {
-          addOperators(parsed)
-        }
-        setMsg(`${parsed.length} operators ${mode === 'replace' ? 'loaded (replaced ' + factory + ')' : 'appended to ' + factory}.`)
+        const save = mode === 'replace' ? replaceFactoryOperators(factory, parsed) : appendOperators(factory, parsed)
+        save
+          .then(() => setMsg(`${parsed.length} operators ${mode === 'replace' ? 'loaded (replaced ' + factory + ')' : 'appended to ' + factory}.`))
+          .catch(ex2 => setErr(ex2.message || 'Could not save operators to the server.'))
       } catch (ex) {
         setErr('Could not read the file. Use .xlsx or .csv with headers: ID, Name, Grade, Line.')
       }
@@ -59,15 +58,15 @@ export default function Operators() {
 
   const downloadTemplate = () => {
     const ws = XLSX.utils.json_to_sheet([
-      { ID: 'OP-501', Name: 'Operator Name', Grade: 'A', Line: 'Line 1' },
-      { ID: 'OP-502', Name: 'Another Operator', Grade: 'B', Line: 'Line 2' },
+      { ID: 'OP-501', Name: 'Operator Name', Grade: 'A', Floor: '4th Floor', Line: 25, Machine: 'SNLS' },
+      { ID: 'OP-502', Name: 'Another Operator', Grade: 'B', Floor: '4th Floor', Line: 26, Machine: '4T O/L' },
     ])
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, 'Operators')
     XLSX.writeFile(wb, `operator-list-template.xlsx`)
   }
 
-  const clearFactory = () => setOperators(operators.filter(o => o.factory !== factory))
+  const clearFactory = () => { if (confirm(`Clear all operators for ${factory}?`)) clearFactoryOperators(factory).then(() => setMsg(`Cleared ${factory} operators.`)).catch(ex => setErr(ex.message)) }
 
   return (
     <div className="shell" style={{ gridTemplateColumns: '1fr' }}>
@@ -86,7 +85,7 @@ export default function Operators() {
 
               <div className="field"><label>Factory</label>
                 <select className="inp" value={factory} onChange={e => setFactory(e.target.value)} disabled={!user.crossFactory}>
-                  {facOptions.map(f => <option key={f.code} value={f.code}>{f.code} — {f.name} ({f.lines.length} lines)</option>)}
+                  {facOptions.map(f => <option key={f.code} value={f.code}>{f.code} — {f.name} ({lineCount(f.code)} lines)</option>)}
                 </select>
               </div>
 
@@ -105,7 +104,7 @@ export default function Operators() {
                 <div>
                   <div style={{ fontSize: 30 }}>📤</div>
                   <div style={{ fontWeight: 600, marginTop: 4, color: '#334155' }}>Click to upload .xlsx / .csv</div>
-                  <div style={{ fontSize: 12, marginTop: 2 }}>or drag &amp; drop · headers: ID, Name, Grade, Line</div>
+                  <div style={{ fontSize: 12, marginTop: 2 }}>or drag &amp; drop · headers: ID, Name, Grade, Floor, Line, Machine</div>
                 </div>
               </div>
 
@@ -120,15 +119,17 @@ export default function Operators() {
             <Card title={`Current Operators — ${factory}`} hint={`${list.length} total`}>
               <div className="table-wrap" style={{ border: 'none', borderRadius: 0, maxHeight: 420 }}>
                 <table>
-                  <thead><tr><th>ID</th><th>Name</th><th>Grade</th><th>Line</th></tr></thead>
+                  <thead><tr><th>ID</th><th>Name</th><th>Grade</th><th>Floor</th><th>Line</th><th>Machine</th></tr></thead>
                   <tbody>
-                    {list.length === 0 ? <tr><td colSpan={4}><div className="center muted" style={{ padding: '30px 0' }}>No operators for {factory}. Upload a list.</div></td></tr> : null}
+                    {list.length === 0 ? <tr><td colSpan={6}><div className="center muted" style={{ padding: '30px 0' }}>No operators for {factory}. Upload a list.</div></td></tr> : null}
                     {list.map(o => (
                       <tr key={o.id}>
                         <td className="mono muted">{o.id}</td>
                         <td><b>{o.name}</b></td>
                         <td><Badge tone={o.grade?.startsWith('A') ? 'green' : o.grade === 'B' ? 'blue' : 'amber'}>{o.grade || '—'}</Badge></td>
-                        <td>{o.line || '—'}</td>
+                        <td>{o.floor || '—'}</td>
+                        <td>{o.line ? `Line ${o.line}` : '—'}</td>
+                        <td>{o.machine ? <Badge tone={o.machine === 'Manual' ? 'gray' : 'blue'}>{o.machine}</Badge> : '—'}</td>
                       </tr>
                     ))}
                   </tbody>

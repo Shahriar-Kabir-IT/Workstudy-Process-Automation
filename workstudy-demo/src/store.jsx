@@ -1,70 +1,87 @@
-import { createContext, useContext, useState } from 'react'
-import { STYLES, OPERATORS } from './data/seed.js'
+import { createContext, useContext, useEffect, useState, useCallback } from 'react'
+import { api, token, setUnauthorizedHandler } from './api.js'
 
 const StoreCtx = createContext(null)
 export const useStore = () => useContext(StoreCtx)
 
-function loadUser() {
-  try { return JSON.parse(sessionStorage.getItem('ws_user')) } catch { return null }
-}
-function loadStyles() {
-  try { return JSON.parse(sessionStorage.getItem('ws_styles_v2')) || [] } catch { return [] }
-}
-function loadOverrides() {
-  try { return JSON.parse(sessionStorage.getItem('ws_overrides_v2')) || {} } catch { return {} }
-}
-function loadOperators() {
-  try {
-    const s = sessionStorage.getItem('ws_operators_v1')
-    return s ? JSON.parse(s) : OPERATORS
-  } catch { return OPERATORS }
-}
+const USER_KEY = 'ws_user'
+const loadCachedUser = () => { try { return JSON.parse(localStorage.getItem(USER_KEY)) } catch { return null } }
+const cacheUser = (u) => { try { u ? localStorage.setItem(USER_KEY, JSON.stringify(u)) : localStorage.removeItem(USER_KEY) } catch {} }
 
 export function StoreProvider({ children }) {
-  const [user, setUser] = useState(loadUser)
-  const [custom, setCustom] = useState(loadStyles)
-  const [overrides, setOverrides] = useState(loadOverrides) // styleId -> partial patch
-  const [photos, setPhotos] = useState({}) // styleId -> [dataURL] (in-memory for the session)
-  const addPhotos = (id, urls) => setPhotos(p => ({ ...p, [id]: [...(p[id] || []), ...urls] }))
-  const removePhoto = (id, idx) => setPhotos(p => ({ ...p, [id]: (p[id] || []).filter((_, i) => i !== idx) }))
+  const [user, setUser] = useState(loadCachedUser)      // cached for instant UI; verified on mount
+  const [styles, setStyles] = useState([])
+  const [operators, setOperators] = useState([])
+  const [ready, setReady] = useState(false)
 
-  const [operators, setOperatorsState] = useState(loadOperators)
-  const persistOps = (list) => { try { sessionStorage.setItem('ws_operators_v1', JSON.stringify(list)) } catch {} }
-  const setOperators = (list) => { setOperatorsState(list); persistOps(list) }
-  const addOperators = (list) => { const next = [...operators, ...list]; setOperatorsState(next); persistOps(next) }
-  const operatorsFor = (code) => operators.filter(o => o.factory === code)
+  const loadAll = useCallback(async () => {
+    const [st, ops] = await Promise.all([
+      api.styles.list().catch(() => []),
+      api.operators.list().catch(() => []),
+    ])
+    setStyles(st || []); setOperators(ops || [])
+  }, [])
 
-  // custom (user-created) orders first, then the seeded demo styles — with per-style overrides merged in
-  const allStyles = [...custom, ...STYLES].map(s => (overrides[s.id] ? { ...s, ...overrides[s.id] } : s))
+  // restore session from a stored token on first load
+  useEffect(() => {
+    setUnauthorizedHandler(() => { setUser(null); cacheUser(null); setStyles([]); setOperators([]) })
+    let cancelled = false
+    ;(async () => {
+      if (token.get()) {
+        try {
+          const { user: me } = await api.auth.me()
+          if (cancelled) return
+          setUser(me); cacheUser(me)
+          await loadAll()
+        } catch { if (!cancelled) { setUser(null); cacheUser(null); token.clear() } }
+      }
+      if (!cancelled) setReady(true)
+    })()
+    return () => { cancelled = true }
+  }, [loadAll])
 
+  const login = async (username, password) => {
+    const { token: tok, user: u } = await api.auth.login(username, password)
+    token.set(tok); setUser(u); cacheUser(u)
+    await loadAll()
+    return u
+  }
+  const logout = () => { token.clear(); cacheUser(null); setUser(null); setStyles([]); setOperators([]) }
+
+  // ---- styles ----
+  const addStyle = async (s) => {
+    const created = await api.styles.create(s)
+    setStyles(list => [created, ...list])
+    return created
+  }
   const updateStyle = (id, patch) => {
-    setOverrides(o => {
-      const next = { ...o, [id]: { ...(o[id] || {}), ...patch } }
-      try { sessionStorage.setItem('ws_overrides_v2', JSON.stringify(next)) } catch {}
-      return next
-    })
+    setStyles(list => list.map(s => (s.id === id ? { ...s, ...patch } : s)))   // optimistic
+    api.styles.patch(id, patch)
+      .then(doc => setStyles(list => list.map(s => (s.id === id ? doc : s))))
+      .catch(() => api.styles.list().then(st => setStyles(st || [])).catch(() => {}))   // reconcile on error
   }
+  const styleById = (id) => styles.find(s => s.id === id)
+  const stylesForUser = (u) => (u?.crossFactory ? styles : styles.filter(s => s.factory === u.factory))
 
-  const login = (u) => {
-    setUser(u)
-    try { sessionStorage.setItem('ws_user', JSON.stringify(u)) } catch {}
-  }
-  const logout = () => {
-    setUser(null)
-    try { sessionStorage.removeItem('ws_user') } catch {}
-  }
-  const addStyle = (s) => {
-    const next = [s, ...custom]
-    setCustom(next)
-    try { sessionStorage.setItem('ws_styles_v2', JSON.stringify(next)) } catch {}
-  }
+  // ---- sample photos (persisted inside the style's doc) ----
+  const photos = Object.fromEntries(styles.map(s => [s.id, s.photos || []]))
+  const addPhotos = (id, urls) => { const cur = styleById(id)?.photos || []; updateStyle(id, { photos: [...cur, ...urls] }) }
+  const removePhoto = (id, idx) => { const cur = styleById(id)?.photos || []; updateStyle(id, { photos: cur.filter((_, i) => i !== idx) }) }
 
-  const styleById = (id) => allStyles.find(s => s.id === id)
-  const stylesForUser = (u) =>
-    u.crossFactory ? allStyles : allStyles.filter(s => s.factory === u.factory)
+  // ---- operators ----
+  const operatorsFor = (code) => operators.filter(o => o.factory === code)
+  const mergeFactory = (factory, list) => setOperators(prev => [...prev.filter(o => o.factory !== factory), ...list])
+  const replaceFactoryOperators = async (factory, list) => { const r = await api.operators.replace(factory, list); mergeFactory(factory, r.operators) }
+  const appendOperators = async (factory, list) => { const r = await api.operators.append(factory, list); mergeFactory(factory, r.operators) }
+  const clearFactoryOperators = async (factory) => { await api.operators.clear(factory); mergeFactory(factory, []) }
 
   return (
-    <StoreCtx.Provider value={{ user, login, logout, allStyles, addStyle, updateStyle, styleById, stylesForUser, photos, addPhotos, removePhoto, operators, operatorsFor, setOperators, addOperators }}>
+    <StoreCtx.Provider value={{
+      user, ready, login, logout,
+      allStyles: styles, addStyle, updateStyle, styleById, stylesForUser,
+      photos, addPhotos, removePhoto,
+      operators, operatorsFor, replaceFactoryOperators, appendOperators, clearFactoryOperators,
+    }}>
       {children}
     </StoreCtx.Provider>
   )

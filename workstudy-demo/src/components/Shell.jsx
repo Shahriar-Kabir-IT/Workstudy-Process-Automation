@@ -1,6 +1,7 @@
 import { useNavigate, useParams } from 'react-router-dom'
 import { useStore } from '../store.jsx'
 import { STEPS, getFactory } from '../data/seed.js'
+import logo from '../assets/logo.png'
 
 export function Topbar({ crumbs }) {
   const { user, logout } = useStore()
@@ -10,7 +11,7 @@ export function Topbar({ crumbs }) {
     <div className="topbar">
       <div className="crumbs">{crumbs}</div>
       <div className="spacer" />
-      <span className="fac-pill">🏭 {user.crossFactory ? 'All Factories' : fac.code} · {fac.name}</span>
+      <span className="fac-pill">🏭 {user.crossFactory ? 'All Factories' : (fac ? `${fac.code} · ${fac.name}` : (user.factory || '—'))}</span>
       <div className="user-chip">
         <div className="av" style={{ background: user.color }}>{user.initials}</div>
         <div className="meta"><b>{user.name}</b><span>{user.roleLabel}</span></div>
@@ -25,8 +26,8 @@ export function StepSidebar({ style, activeKey }) {
   return (
     <aside className="sidebar">
       <div className="sb-brand">
-        <div className="brand-logo">W</div>
-        <div><b>Work Study</b><span>Automation Suite</span></div>
+        <div className="sb-logo"><img src={logo} alt="Ananta" /></div>
+        <div><b>Work Study Process</b><span>Automation</span></div>
       </div>
 
       <div className="sb-section">Style</div>

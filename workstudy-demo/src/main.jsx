@@ -1,16 +1,5 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import { HashRouter } from 'react-router-dom'
-import App from './App.jsx'
-import { StoreProvider } from './store.jsx'
-import './index.css'
+// Load runtime configuration FIRST (public/config/config.json), then mount the app.
+// This lets config changes take effect without touching component code.
+import { loadConfig } from './config.js'
 
-ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
-    <HashRouter>
-      <StoreProvider>
-        <App />
-      </StoreProvider>
-    </HashRouter>
-  </React.StrictMode>
-)
+loadConfig().finally(() => { import('./bootstrap.jsx') })

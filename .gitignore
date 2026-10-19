@@ -21,6 +21,12 @@ Thumbs.db
 node_modules/
 dist/
 build/
+*.zip
 .env
 .env.*
 !.env.example
+
+# Secrets — never commit
+SEED_CREDENTIALS.txt
+*.pem
+*.key

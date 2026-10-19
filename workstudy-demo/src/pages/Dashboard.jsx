@@ -2,12 +2,15 @@ import { useNavigate } from 'react-router-dom'
 import { useStore } from '../store.jsx'
 import { Topbar } from '../components/Shell.jsx'
 import { Stat, Badge } from '../components/ui.jsx'
+import { Navigate } from 'react-router-dom'
 import { STEPS, getFactory } from '../data/seed.js'
-import { totalSMV } from '../engine/calc.js'
+import { totalSMV, MATRIX_MIN_PER_HOUR } from '../engine/calc.js'
 
 export default function Dashboard() {
   const { user, stylesForUser } = useStore()
   const nav = useNavigate()
+  if (user.role === 'SYSADMIN') return <Navigate to="/sysadmin/system" />
+  if (user.role === 'ADMIN') return <Navigate to="/admin/overview" />
   const styles = stylesForUser(user)
   const fac = getFactory(user.factory)
 
@@ -21,12 +24,12 @@ export default function Dashboard() {
   return (
     <div className="shell" style={{ gridTemplateColumns: '1fr' }}>
       <div className="main">
-        <Topbar crumbs={<><b>Dashboard</b> · {user.crossFactory ? 'All Factories' : fac.name}</>} />
+        <Topbar crumbs={<><b>Dashboard</b> · {user.crossFactory ? 'All Factories' : (fac?.name || user.factory || '—')}</>} />
         <div className="content">
           <div className="page-head">
             <div>
               <h1>Welcome, {user.name.split(' ')[0]} 👋</h1>
-              <div className="sub">{user.roleLabel} · {user.crossFactory ? 'Access to all factories' : fac.name + ' (' + fac.code + ')'}</div>
+              <div className="sub">{user.roleLabel} · {user.crossFactory ? 'Access to all factories' : (fac ? fac.name + ' (' + fac.code + ')' : (user.factory || '—'))}</div>
             </div>
             <div className="flex" style={{ gap: 10 }}>
               <button className="btn" onClick={() => nav('/operators')}>👷 Operators</button>
@@ -37,7 +40,7 @@ export default function Dashboard() {
           <div className="grid cols-4" style={{ marginBottom: 18 }}>
             <Stat label="Active Styles" value={active} foot="in the pipeline" accent="#2563eb" />
             <Stat label="Pending Approvals" value={pendingApprovals} foot="OB / layout gates" accent="#d97706" />
-            <Stat label="Avg Line Efficiency" value={avgEff} unit="%" foot="effective hour = 51 min" accent="#16a34a" />
+            <Stat label="Avg Line Efficiency" value={avgEff} unit="%" foot={`effective hour = ${MATRIX_MIN_PER_HOUR} min`} accent="#16a34a" />
             <Stat label="Factories" value={user.crossFactory ? 3 : 1} foot={user.crossFactory ? 'AGL · AJL · ABM' : fac.code} accent="#0891b2" />
           </div>
 
@@ -47,7 +50,7 @@ export default function Dashboard() {
               <table>
                 <thead>
                   <tr>
-                    <th>Style</th><th>Item</th><th>Buyer</th><th>Factory</th><th>Line</th>
+                    <th>Style</th><th>Item</th><th>Buyer</th><th>Factory</th><th>Floor / Line</th>
                     <th>Shape</th><th className="num">SMV</th><th className="num">MP</th><th>Current Step</th><th>Status</th><th></th>
                   </tr>
                 </thead>
@@ -65,8 +68,8 @@ export default function Dashboard() {
                       <td>{s.item}</td>
                       <td>{s.buyer}</td>
                       <td><Badge tone="gray">{s.factory}</Badge></td>
-                      <td>{s.line}</td>
-                      <td><Badge tone={s.lineShape === 'U' ? 'cyan' : 'blue'}>{s.lineShape}-shape</Badge></td>
+                      <td>{s.line ? `${s.floor} · L${s.line}` : <span className="muted">—</span>}</td>
+                      <td>{s.lineShape ? <Badge tone={s.lineShape === 'U' ? 'cyan' : 'blue'}>{s.lineShape}-shape</Badge> : <span className="muted">—</span>}</td>
                       <td className="num mono">{s.ops.length ? totalSMV(s.ops) : s.smv}</td>
                       <td className="num mono">{s.manpower}</td>
                       <td><span className="muted">Step {s.step}:</span> {stepLabel(s.step)}</td>

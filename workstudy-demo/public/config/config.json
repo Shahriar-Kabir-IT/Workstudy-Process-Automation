@@ -1,0 +1,808 @@
+{
+  "_readme": "Runtime configuration — OB library now lives in PostgreSQL (served by the API, VITE_API_URL). Edit sections here and reload; omitted sections fall back to defaults.",
+  "engine": {
+    "minutesPerHour": 60,
+    "matrixMinutesPerHour": 51,
+    "uclFactor": 1.1,
+    "lclFactor": 0.9,
+    "planEfficiency": 0.8,
+    "targetBasisPct": 65,
+    "workingHours": 10
+  },
+  "categories": [
+    "Long Pant",
+    "Short Pant",
+    "Jacket",
+    "T-Shirt",
+    "Shirt",
+    "Denim"
+  ],
+  "steps": [
+    {
+      "n": 1,
+      "key": "order",
+      "label": "Order Details",
+      "role": "Planning Board"
+    },
+    {
+      "n": 2,
+      "key": "sample",
+      "label": "Approved Sample",
+      "role": "Production Co-ordinator"
+    },
+    {
+      "n": 3,
+      "key": "ob",
+      "label": "Operation Breakdown",
+      "role": "WSE"
+    },
+    {
+      "n": 4,
+      "key": "approval",
+      "label": "OB Approval",
+      "role": "Asst. Mgr. (Central)",
+      "gate": true
+    },
+    {
+      "n": 5,
+      "key": "layout",
+      "label": "Line Layout",
+      "role": "WSE"
+    },
+    {
+      "n": 6,
+      "key": "verify",
+      "label": "Layout Verification",
+      "role": "Sr. Exec. / Mgr.",
+      "gate": true
+    },
+    {
+      "n": 7,
+      "key": "plan",
+      "label": "Production Plan",
+      "role": "—",
+      "low": true
+    },
+    {
+      "n": 8,
+      "key": "changeover",
+      "label": "Change Over Time",
+      "role": "—",
+      "low": true
+    },
+    {
+      "n": 9,
+      "key": "cycle",
+      "label": "Cycle Time",
+      "role": "WSE"
+    },
+    {
+      "n": 10,
+      "key": "skill",
+      "label": "Skill Matrix",
+      "role": "WSE"
+    }
+  ],
+  "permissions": {
+    "obPrepare": [
+      "WSE"
+    ],
+    "sampleManage": [
+      "WSE"
+    ],
+    "sampleDecide": [
+      "WSE",
+      "ASST_MGR_CENTRAL",
+      "ADMIN"
+    ],
+    "obApprove": [
+      "ASST_MGR_CENTRAL",
+      "ADMIN"
+    ],
+    "obReject": [
+      "ASST_MGR_CENTRAL",
+      "ADMIN"
+    ],
+    "layoutVerify": [
+      "SR_MGR",
+      "ASST_MGR_CENTRAL",
+      "ADMIN"
+    ],
+    "changeRequest": [
+      "WSE"
+    ],
+    "changeDecide": [
+      "ASST_MGR_CENTRAL",
+      "ADMIN"
+    ]
+  },
+  "machineLegend": {
+    "SNLS": "Single Needle Lock Stitch",
+    "DNLS": "Double Needle Lock Stitch",
+    "4T O/L": "4 Thread Overlock",
+    "3T O/L": "3 Thread Overlock",
+    "3T F/L": "3 Thread Flat Lock",
+    "MNCS": "Multi Needle Chain Stitch (Kansai)",
+    "B/T": "Bartack",
+    "SNAP": "Snap Button Attach",
+    "HEATSEAL": "Heat Seal Press",
+    "IRON": "Ironer",
+    "Manual": "Manual / Helper"
+  },
+  "fieldOptions": {
+    "needleType": [
+      "DB",
+      "DPX5",
+      "DC",
+      "UY",
+      "UO",
+      "DO",
+      "DPX17"
+    ],
+    "needleSize": [
+      "9",
+      "10",
+      "11",
+      "14",
+      "16",
+      "18",
+      "21"
+    ],
+    "threadNeedle": [
+      "80",
+      "60",
+      "40",
+      "27",
+      "105"
+    ],
+    "threadBobbin": [
+      "60",
+      "40",
+      "27",
+      "105"
+    ],
+    "gauge": [
+      "N/A",
+      "Plain",
+      "1/16",
+      "1/8",
+      "3/16",
+      "1/4",
+      "Zipper"
+    ],
+    "foot": [
+      "Light",
+      "Medium",
+      "Heavy"
+    ],
+    "pressure": [
+      "Regular",
+      "Compensation"
+    ]
+  },
+  "machineCategory": {
+    "SNLS": "lock",
+    "DNLS": "lock",
+    "4T O/L": "overlock",
+    "3T O/L": "overlock",
+    "3T F/L": "overlock",
+    "MNCS": "chain",
+    "B/T": "bartack",
+    "Manual": "none",
+    "HEATSEAL": "none",
+    "IRON": "none",
+    "SNAP": "none"
+  },
+  "narrowing": {
+    "lock": {
+      "needleType": [
+        "DB",
+        "DPX5"
+      ],
+      "needleSize": [
+        "14",
+        "16"
+      ],
+      "threadNeedle": [
+        "80",
+        "60"
+      ],
+      "threadBobbin": [
+        "60"
+      ],
+      "gauge": [
+        "Plain",
+        "1/16",
+        "1/8",
+        "3/16",
+        "1/4"
+      ],
+      "foot": [
+        "Light",
+        "Medium"
+      ],
+      "pressure": [
+        "Regular",
+        "Compensation"
+      ]
+    },
+    "overlock": {
+      "needleType": [
+        "DC"
+      ],
+      "needleSize": [
+        "14",
+        "16"
+      ],
+      "threadNeedle": [
+        "27"
+      ],
+      "threadBobbin": [
+        "27"
+      ],
+      "gauge": [
+        "N/A"
+      ],
+      "foot": [
+        "Light",
+        "Medium"
+      ],
+      "pressure": [
+        "Regular"
+      ]
+    },
+    "chain": {
+      "needleType": [
+        "UY",
+        "UO"
+      ],
+      "needleSize": [
+        "16",
+        "18"
+      ],
+      "threadNeedle": [
+        "80"
+      ],
+      "threadBobbin": [
+        "60"
+      ],
+      "gauge": [
+        "Plain"
+      ],
+      "foot": [
+        "Medium"
+      ],
+      "pressure": [
+        "Regular"
+      ]
+    },
+    "bartack": {
+      "needleType": [
+        "DPX17"
+      ],
+      "needleSize": [
+        "19",
+        "21"
+      ],
+      "threadNeedle": [
+        "27"
+      ],
+      "threadBobbin": [
+        "27"
+      ],
+      "gauge": [
+        "Plain"
+      ],
+      "foot": [
+        "Light"
+      ],
+      "pressure": [
+        "Regular"
+      ]
+    },
+    "none": {
+      "needleType": [
+        "N/A"
+      ],
+      "needleSize": [
+        "N/A"
+      ],
+      "threadNeedle": [
+        "N/A"
+      ],
+      "threadBobbin": [
+        "N/A"
+      ],
+      "gauge": [
+        "N/A"
+      ],
+      "foot": [
+        "N/A"
+      ],
+      "pressure": [
+        "N/A"
+      ]
+    }
+  },
+  "obLibrary": [],
+  "factories": [
+    {
+      "code": "AGL",
+      "name": "Ananta Garments Ltd",
+      "floors": [
+        {
+          "name": "2nd Floor",
+          "lines": [
+            {
+              "no": 1,
+              "shape": "U"
+            },
+            {
+              "no": 2,
+              "shape": "U"
+            },
+            {
+              "no": 3,
+              "shape": "U"
+            },
+            {
+              "no": 4,
+              "shape": "U"
+            },
+            {
+              "no": 5,
+              "shape": "U"
+            },
+            {
+              "no": 6,
+              "shape": "I"
+            },
+            {
+              "no": 7,
+              "shape": "I"
+            },
+            {
+              "no": 8,
+              "shape": "I"
+            },
+            {
+              "no": 9,
+              "shape": "I"
+            },
+            {
+              "no": 10,
+              "shape": "I"
+            },
+            {
+              "no": 11,
+              "shape": "I"
+            },
+            {
+              "no": 12,
+              "shape": "I"
+            }
+          ]
+        },
+        {
+          "name": "3rd Floor",
+          "lines": [
+            {
+              "no": 13,
+              "shape": "U"
+            },
+            {
+              "no": 14,
+              "shape": "U"
+            },
+            {
+              "no": 15,
+              "shape": "U"
+            },
+            {
+              "no": 16,
+              "shape": "U"
+            },
+            {
+              "no": 17,
+              "shape": "U"
+            },
+            {
+              "no": 18,
+              "shape": "U"
+            },
+            {
+              "no": 19,
+              "shape": "I"
+            },
+            {
+              "no": 20,
+              "shape": "I"
+            },
+            {
+              "no": 21,
+              "shape": "I"
+            },
+            {
+              "no": 22,
+              "shape": "I"
+            },
+            {
+              "no": 23,
+              "shape": "I"
+            },
+            {
+              "no": 24,
+              "shape": "I"
+            }
+          ]
+        },
+        {
+          "name": "4th Floor",
+          "lines": [
+            {
+              "no": 25,
+              "shape": "U"
+            },
+            {
+              "no": 26,
+              "shape": "U"
+            },
+            {
+              "no": 27,
+              "shape": "U"
+            },
+            {
+              "no": 28,
+              "shape": "U"
+            },
+            {
+              "no": 29,
+              "shape": "I"
+            },
+            {
+              "no": 30,
+              "shape": "I"
+            },
+            {
+              "no": 31,
+              "shape": "I"
+            },
+            {
+              "no": 32,
+              "shape": "I"
+            },
+            {
+              "no": 33,
+              "shape": "I"
+            },
+            {
+              "no": 34,
+              "shape": "I"
+            }
+          ]
+        },
+        {
+          "name": "5th Floor",
+          "lines": [
+            {
+              "no": 35,
+              "shape": "U"
+            },
+            {
+              "no": 36,
+              "shape": "U"
+            },
+            {
+              "no": 37,
+              "shape": "U"
+            },
+            {
+              "no": 38,
+              "shape": "U"
+            },
+            {
+              "no": 39,
+              "shape": "U"
+            },
+            {
+              "no": 40,
+              "shape": "I"
+            },
+            {
+              "no": 41,
+              "shape": "I"
+            },
+            {
+              "no": 42,
+              "shape": "I"
+            },
+            {
+              "no": 43,
+              "shape": "I"
+            },
+            {
+              "no": 44,
+              "shape": "I"
+            },
+            {
+              "no": 45,
+              "shape": "I"
+            },
+            {
+              "no": 46,
+              "shape": "I"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "code": "AJL",
+      "name": "Ananta Jeanswear Ltd",
+      "floors": [
+        {
+          "name": "2nd Floor",
+          "lines": [
+            {
+              "no": 1,
+              "shape": "U"
+            },
+            {
+              "no": 2,
+              "shape": "U"
+            },
+            {
+              "no": 3,
+              "shape": "U"
+            },
+            {
+              "no": 4,
+              "shape": "U"
+            },
+            {
+              "no": 5,
+              "shape": "I"
+            },
+            {
+              "no": 6,
+              "shape": "I"
+            },
+            {
+              "no": 7,
+              "shape": "I"
+            },
+            {
+              "no": 8,
+              "shape": "I"
+            },
+            {
+              "no": 9,
+              "shape": "I"
+            },
+            {
+              "no": 10,
+              "shape": "I"
+            }
+          ]
+        },
+        {
+          "name": "3rd Floor",
+          "lines": [
+            {
+              "no": 11,
+              "shape": "U"
+            },
+            {
+              "no": 12,
+              "shape": "U"
+            },
+            {
+              "no": 13,
+              "shape": "U"
+            },
+            {
+              "no": 14,
+              "shape": "U"
+            },
+            {
+              "no": 15,
+              "shape": "U"
+            },
+            {
+              "no": 16,
+              "shape": "I"
+            },
+            {
+              "no": 17,
+              "shape": "I"
+            },
+            {
+              "no": 18,
+              "shape": "I"
+            },
+            {
+              "no": 19,
+              "shape": "I"
+            },
+            {
+              "no": 20,
+              "shape": "I"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "code": "ABM",
+      "name": "Ananta Apparel (ABM)",
+      "floors": [
+        {
+          "name": "Ground Floor",
+          "lines": [
+            {
+              "no": 1,
+              "shape": "U"
+            },
+            {
+              "no": 2,
+              "shape": "U"
+            },
+            {
+              "no": 3,
+              "shape": "U"
+            },
+            {
+              "no": 4,
+              "shape": "U"
+            },
+            {
+              "no": 5,
+              "shape": "U"
+            },
+            {
+              "no": 6,
+              "shape": "I"
+            },
+            {
+              "no": 7,
+              "shape": "I"
+            },
+            {
+              "no": 8,
+              "shape": "I"
+            },
+            {
+              "no": 9,
+              "shape": "I"
+            },
+            {
+              "no": 10,
+              "shape": "I"
+            },
+            {
+              "no": 11,
+              "shape": "I"
+            },
+            {
+              "no": 12,
+              "shape": "I"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "id": "u1",
+      "name": "Rahim Uddin",
+      "initials": "RU",
+      "role": "WSE",
+      "roleLabel": "Work Study Executive",
+      "factory": "AGL",
+      "color": "#2563eb",
+      "crossFactory": false
+    },
+    {
+      "id": "u2",
+      "name": "Karim Hossain",
+      "initials": "KH",
+      "role": "WSE",
+      "roleLabel": "Work Study Executive",
+      "factory": "AJL",
+      "color": "#0891b2",
+      "crossFactory": false
+    },
+    {
+      "id": "u3",
+      "name": "Hanif Mahmud",
+      "initials": "HM",
+      "role": "ASST_MGR_CENTRAL",
+      "roleLabel": "Asst. Mgr. (Central)",
+      "factory": "AGL",
+      "color": "#7c3aed",
+      "crossFactory": true
+    },
+    {
+      "id": "u4",
+      "name": "Noman Chowdhury",
+      "initials": "NC",
+      "role": "SR_MGR",
+      "roleLabel": "Sr. Exec. / Mgr.",
+      "factory": "AGL",
+      "color": "#16a34a",
+      "crossFactory": false
+    },
+    {
+      "id": "u5",
+      "name": "Shahriar Kabir",
+      "initials": "SK",
+      "role": "ADMIN",
+      "roleLabel": "Super Admin",
+      "factory": "AGL",
+      "color": "#dc2626",
+      "crossFactory": true
+    }
+  ],
+  "operatorSeed": {
+    "factory": "AGL",
+    "floor": "4th Floor",
+    "count": 50,
+    "lineStart": 25,
+    "lineSpan": 10,
+    "firstNames": [
+      "Shanti",
+      "Sojib",
+      "Afroza",
+      "Lovely",
+      "Sorna",
+      "Juli",
+      "Mukta",
+      "Bristy",
+      "Masuma",
+      "Hasna",
+      "Reshmi",
+      "Lipi",
+      "Archana",
+      "Nazma",
+      "Rina",
+      "Mina",
+      "Peyara",
+      "Sefali",
+      "Sharmin",
+      "Honufa",
+      "Sabina",
+      "Rabeya",
+      "Taslima",
+      "Anwara",
+      "Marzia"
+    ],
+    "lastNames": [
+      "Akter",
+      "Begum",
+      "Khatun",
+      "Rani",
+      "Das",
+      "Yasmin",
+      "Roy",
+      "Khanom"
+    ],
+    "machines": [
+      "SNLS",
+      "DNLS",
+      "4T O/L",
+      "3T O/L",
+      "MNCS",
+      "B/T",
+      "SNAP",
+      "IRON",
+      "3T F/L",
+      "Manual"
+    ],
+    "grades": [
+      "A",
+      "B",
+      "C"
+    ]
+  }
+}

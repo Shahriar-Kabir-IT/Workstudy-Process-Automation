@@ -6,8 +6,11 @@
 //        51 min (85%) — per factory practice.
 // ============================================================
 
-export const MIN_PER_HOUR = 60            // OB / Layout / Cycle-time
-export const MATRIX_MIN_PER_HOUR = 51     // Skill matrix & efficiency only
+import { CONFIG } from '../config.js'
+
+export const MIN_PER_HOUR = CONFIG.engine.minutesPerHour              // OB / Layout / Cycle-time
+export const MATRIX_MIN_PER_HOUR = CONFIG.engine.matrixMinutesPerHour // Skill matrix & efficiency only
+const UCL_F = CONFIG.engine.uclFactor, LCL_F = CONFIG.engine.lclFactor
 
 const safe = (n) => (isFinite(n) && !isNaN(n) ? n : 0)
 export const round = (n, d = 2) => {
@@ -35,8 +38,8 @@ export const stationCapacity = (smv, machines = 1) => Math.floor(safe((MIN_PER_H
 
 // ---- Cycle time ----
 export const bpt = (totalObservedMin, stations) => round(safe(totalObservedMin / stations), 4)
-export const ucl = (b) => round(b * 1.10, 4)   // +10%
-export const lcl = (b) => round(b * 0.90, 4)   // -10%
+export const ucl = (b) => round(b * UCL_F, 4)
+export const lcl = (b) => round(b * LCL_F, 4)
 export const workerPotentialPerHour = (b) => Math.floor(safe(MIN_PER_HOUR / b))
 export const workerPotentialPer10 = (b) => workerPotentialPerHour(b) * 10
 export const workerPerformance = (current, potential) => round(safe(current / potential) * 100, 1) // %
