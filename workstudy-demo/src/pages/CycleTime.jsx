@@ -18,7 +18,15 @@ export default function CycleTime({ style }) {
   const nav = useNavigate()
   const { updateStyle, operatorsFor, operators: allOps } = useStore()
   const ops = style.ops || []
-  const operators = operatorsFor(style.factory).length ? operatorsFor(style.factory) : allOps
+  const facOps = operatorsFor(style.factory).length ? operatorsFor(style.factory) : allOps
+  // candidate operators for an operation: same line + same machine, with sensible fallbacks
+  const candFor = (op) => {
+    const lm = facOps.filter(o => (!style.line || String(o.line) === String(style.line)) && (!op.machine || o.machine === op.machine))
+    if (lm.length) return lm
+    const byLine = facOps.filter(o => !style.line || String(o.line) === String(style.line))
+    return byLine.length ? byLine : facOps
+  }
+  const operators = facOps
   const [roundN, setRoundN] = useState(style.cycleRound || 1)
 
   // observation state: sl -> { op: operatorId, t: observedMinutes }
@@ -26,7 +34,8 @@ export default function CycleTime({ style }) {
     const init = {}
     ops.forEach((o, i) => {
       const saved = (style.cycle || []).find(c => c.sl === o.sl)
-      const defId = operators.length ? operators[i % operators.length].id : ''
+      const cands = candFor(o)
+      const defId = cands.length ? cands[i % cands.length].id : ''
       init[o.sl] = saved
         ? { op: saved.operator?.id || defId, t: String(saved.observed) }
         : { op: defId, t: o.smv.toFixed(2) }
@@ -147,8 +156,8 @@ export default function CycleTime({ style }) {
                     <td><Badge tone={o.machine === 'Manual' ? 'gray' : 'blue'}>{o.machine}</Badge></td>
                     <td className="num mono">{o.smv.toFixed(2)}</td>
                     <td>
-                      <select className="inp" style={{ padding: '5px 8px', minWidth: 130 }} value={e.op} onChange={ev => setObsVal(o.sl, 'op', ev.target.value)}>
-                        {operators.map(op => <option key={op.id} value={op.id}>{op.name}</option>)}
+                      <select className="inp" style={{ padding: '5px 8px', minWidth: 150 }} value={e.op} onChange={ev => setObsVal(o.sl, 'op', ev.target.value)}>
+                        {candFor(o).map(op => <option key={op.id} value={op.id}>{op.name} · L{op.line} · {op.machine}</option>)}
                       </select>
                     </td>
                     <td className="num">
