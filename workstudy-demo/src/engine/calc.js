@@ -45,6 +45,16 @@ export const workerPotentialPer10 = (b) => workerPotentialPerHour(b) * 10
 export const workerPerformance = (current, potential) => round(safe(current / potential) * 100, 1) // %
 export const productivityGap = (current, potential) => round((1 - safe(current / potential)) * 100, 1) // %
 
+// ---- Cycle-time study (matches the H&M balancing sheet) ----
+export const uclCT = (b) => round(b * 1.1, 4)              // UCL = Bpt × 1.1
+export const lclCT = (b) => round(safe(b / 1.1), 4)        // LCL = Bpt ÷ 1.1
+// Worker Performance % = (Total SMV / 1.15) / Total observed Time
+export const cyclePerformance = (smv, totalTime) => round(safe((smv / 1.15) / totalTime) * 100, 1)
+// Productivity Gap % = (Potential − Current) / Potential × 100
+export const cycleGap = (potential, current) => round(safe((potential - current) / potential) * 100, 1)
+// Efficiency % = (Pcs/hr × Total SMV) / (Workers × 60) × 100
+export const effPct = (pcsPerHour, smv, workers) => round(safe((pcsPerHour * smv) / (workers * 60)) * 100, 1)
+
 // ---- Skill Matrix & Efficiency  (uses 51-min effective hour) ----
 export const matrixCapacity = (smv, machines = 1) =>
   Math.floor(safe((MATRIX_MIN_PER_HOUR / smv) * machines))  // realistic pcs/hr at 85% hour

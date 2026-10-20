@@ -68,7 +68,7 @@ export default function Dashboard() {
                       <td>{s.item}</td>
                       <td>{s.buyer}</td>
                       <td><Badge tone="gray">{s.factory}</Badge></td>
-                      <td>{s.line ? `${s.floor} · L${s.line}` : <span className="muted">—</span>}</td>
+                      <td>{s.line ? `Line ${s.line}` : <span className="muted">—</span>}</td>
                       <td>{s.lineShape ? <Badge tone={s.lineShape === 'U' ? 'cyan' : 'blue'}>{s.lineShape}-shape</Badge> : <span className="muted">—</span>}</td>
                       <td className="num mono">{s.ops.length ? totalSMV(s.ops) : s.smv}</td>
                       <td className="num mono">{s.manpower}</td>

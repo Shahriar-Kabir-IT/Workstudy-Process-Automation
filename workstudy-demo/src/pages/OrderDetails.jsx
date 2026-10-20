@@ -22,7 +22,7 @@ export default function OrderDetails({ style }) {
         </Card>
         <Card title="Assignment">
           <KV k="Factory" v={<Badge tone="blue">{style.factory}</Badge>} />
-          <KV k="Floor / Line" v={style.line ? `${style.floor} · Line ${style.line}` : <span className="muted">assigned in Line Layout</span>} />
+          <KV k="Line" v={style.line ? `Line ${style.line}` : <span className="muted">assigned in Line Layout</span>} />
           <KV k="Line Shape" v={style.lineShape ? <Badge tone={style.lineShape === 'U' ? 'cyan' : 'blue'}>{style.lineShape}-shape</Badge> : <span className="muted">declared later</span>} />
           <KV k="Planned Manpower" v={style.manpower} />
           <KV k="Prepared By" v={style.preparedBy || '—'} />

@@ -12,8 +12,10 @@
 //      Put only the sections you want to override in that file.
 // ============================================================
 
-const mkLines = (start, count, u) =>
-  Array.from({ length: count }, (_, i) => ({ no: start + i, shape: i < u ? 'U' : 'I' }))
+// a line has a name, a shape (U/I) and a fixed machine (workstation) count
+const L = (name, shape, machines) => ({ name: String(name).trim(), shape, machines })
+const mk = (names, shape, machines) => names.map(n => L(n, shape, machines))
+const seq = (a, b) => Array.from({ length: b.charCodeAt(0) - a.charCodeAt(0) + 1 }, (_, i) => String.fromCharCode(a.charCodeAt(0) + i))
 
 export const DEFAULTS = {
   // ---- calculation engine constants (tune without code) ----
@@ -94,16 +96,33 @@ export const DEFAULTS = {
   // ---- OB library (master operations) ----
   obLibrary: [],  // OB library now lives in PostgreSQL (served by the API)
 
-  // ---- factories → floors → lines (each line has a declared shape) ----
+  // ---- factories → lines (each line: name, shape U/I, and workstation/machine count) ----
+  //      Source: "Factory wise Line Workstation" (19-10-2026).
   factories: [
     {
-      code: 'AGL', name: 'Ananta Garments Ltd', floors: [
-        { name: '2nd Floor', lines: mkLines(1, 12, 5) }, { name: '3rd Floor', lines: mkLines(13, 12, 6) },
-        { name: '4th Floor', lines: mkLines(25, 10, 4) }, { name: '5th Floor', lines: mkLines(35, 12, 5) },
+      code: 'AGL', name: 'Ananta Garments Ltd', lines: [
+        ...mk(seq('A', 'O'), 'U', 95),
+        ...mk(['New-01', 'New-02', 'New-10', 'New-11', 'New-12', 'New-15'], 'I', 66),
       ],
     },
-    { code: 'AJL', name: 'Ananta Jeanswear Ltd', floors: [{ name: '2nd Floor', lines: mkLines(1, 10, 4) }, { name: '3rd Floor', lines: mkLines(11, 10, 5) }] },
-    { code: 'ABM', name: 'Ananta Apparel (ABM)', floors: [{ name: 'Ground Floor', lines: mkLines(1, 12, 5) }] },
+    {
+      code: 'ASL', name: 'Ananta ASL', lines: [
+        ...mk([...seq('P', 'Z'), 'New-04', 'New-05', 'New-06', 'New-07'], 'U', 95),
+        ...mk(['New-03', 'New-08', 'New-09', 'New-13', 'New-14', 'New-16'], 'I', 66),
+      ],
+    },
+    {
+      code: 'AJL', name: 'Ananta Jeanswear Ltd', lines: [
+        ...mk(seq('A', 'R'), 'U', 80),
+        ...mk(['S', 'T', 'U', 'V', 'W'], 'I', 62),
+      ],
+    },
+    {
+      code: 'ABM', name: 'Ananta Apparel (ABM)', lines: [
+        ...mk(['6', '7', '8', '14', '15', '16'], 'U', 75),
+        ...mk(['1', '2', '3', '4', '5', '9', '10', '11', '12', '13', '17', '18', '19', '20', '21'], 'I', 75),
+      ],
+    },
   ],
 
   // ---- demo login accounts ----
