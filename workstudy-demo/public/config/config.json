@@ -1,5 +1,5 @@
 {
-  "_readme": "Runtime configuration — OB library now lives in PostgreSQL (served by the API, VITE_API_URL). Edit sections here and reload; omitted sections fall back to defaults.",
+  "_readme": "Runtime configuration \u2014 OB library now lives in PostgreSQL (served by the API, VITE_API_URL). Edit sections here and reload; omitted sections fall back to defaults.",
   "engine": {
     "minutesPerHour": 60,
     "matrixMinutesPerHour": 51,
@@ -10,12 +10,11 @@
     "workingHours": 10
   },
   "categories": [
-    "Long Pant",
-    "Short Pant",
-    "Jacket",
-    "T-Shirt",
-    "Shirt",
-    "Denim"
+    "MENS",
+    "WOMENS",
+    "BOYS",
+    "KIDS",
+    "OVERSIZE"
   ],
   "steps": [
     {
@@ -60,14 +59,14 @@
       "n": 7,
       "key": "plan",
       "label": "Production Plan",
-      "role": "—",
+      "role": "\u2014",
       "low": true
     },
     {
       "n": 8,
       "key": "changeover",
       "label": "Change Over Time",
-      "role": "—",
+      "role": "\u2014",
       "low": true
     },
     {
@@ -329,365 +328,454 @@
     {
       "code": "AGL",
       "name": "Ananta Garments Ltd",
-      "floors": [
+      "lines": [
         {
-          "name": "2nd Floor",
-          "lines": [
-            {
-              "no": 1,
-              "shape": "U"
-            },
-            {
-              "no": 2,
-              "shape": "U"
-            },
-            {
-              "no": 3,
-              "shape": "U"
-            },
-            {
-              "no": 4,
-              "shape": "U"
-            },
-            {
-              "no": 5,
-              "shape": "U"
-            },
-            {
-              "no": 6,
-              "shape": "I"
-            },
-            {
-              "no": 7,
-              "shape": "I"
-            },
-            {
-              "no": 8,
-              "shape": "I"
-            },
-            {
-              "no": 9,
-              "shape": "I"
-            },
-            {
-              "no": 10,
-              "shape": "I"
-            },
-            {
-              "no": 11,
-              "shape": "I"
-            },
-            {
-              "no": 12,
-              "shape": "I"
-            }
-          ]
+          "name": "A",
+          "shape": "U",
+          "machines": 95
         },
         {
-          "name": "3rd Floor",
-          "lines": [
-            {
-              "no": 13,
-              "shape": "U"
-            },
-            {
-              "no": 14,
-              "shape": "U"
-            },
-            {
-              "no": 15,
-              "shape": "U"
-            },
-            {
-              "no": 16,
-              "shape": "U"
-            },
-            {
-              "no": 17,
-              "shape": "U"
-            },
-            {
-              "no": 18,
-              "shape": "U"
-            },
-            {
-              "no": 19,
-              "shape": "I"
-            },
-            {
-              "no": 20,
-              "shape": "I"
-            },
-            {
-              "no": 21,
-              "shape": "I"
-            },
-            {
-              "no": 22,
-              "shape": "I"
-            },
-            {
-              "no": 23,
-              "shape": "I"
-            },
-            {
-              "no": 24,
-              "shape": "I"
-            }
-          ]
+          "name": "B",
+          "shape": "U",
+          "machines": 95
         },
         {
-          "name": "4th Floor",
-          "lines": [
-            {
-              "no": 25,
-              "shape": "U"
-            },
-            {
-              "no": 26,
-              "shape": "U"
-            },
-            {
-              "no": 27,
-              "shape": "U"
-            },
-            {
-              "no": 28,
-              "shape": "U"
-            },
-            {
-              "no": 29,
-              "shape": "I"
-            },
-            {
-              "no": 30,
-              "shape": "I"
-            },
-            {
-              "no": 31,
-              "shape": "I"
-            },
-            {
-              "no": 32,
-              "shape": "I"
-            },
-            {
-              "no": 33,
-              "shape": "I"
-            },
-            {
-              "no": 34,
-              "shape": "I"
-            }
-          ]
+          "name": "C",
+          "shape": "U",
+          "machines": 95
         },
         {
-          "name": "5th Floor",
-          "lines": [
-            {
-              "no": 35,
-              "shape": "U"
-            },
-            {
-              "no": 36,
-              "shape": "U"
-            },
-            {
-              "no": 37,
-              "shape": "U"
-            },
-            {
-              "no": 38,
-              "shape": "U"
-            },
-            {
-              "no": 39,
-              "shape": "U"
-            },
-            {
-              "no": 40,
-              "shape": "I"
-            },
-            {
-              "no": 41,
-              "shape": "I"
-            },
-            {
-              "no": 42,
-              "shape": "I"
-            },
-            {
-              "no": 43,
-              "shape": "I"
-            },
-            {
-              "no": 44,
-              "shape": "I"
-            },
-            {
-              "no": 45,
-              "shape": "I"
-            },
-            {
-              "no": 46,
-              "shape": "I"
-            }
-          ]
+          "name": "D",
+          "shape": "U",
+          "machines": 95
+        },
+        {
+          "name": "E",
+          "shape": "U",
+          "machines": 95
+        },
+        {
+          "name": "F",
+          "shape": "U",
+          "machines": 95
+        },
+        {
+          "name": "G",
+          "shape": "U",
+          "machines": 95
+        },
+        {
+          "name": "H",
+          "shape": "U",
+          "machines": 95
+        },
+        {
+          "name": "I",
+          "shape": "U",
+          "machines": 95
+        },
+        {
+          "name": "J",
+          "shape": "U",
+          "machines": 95
+        },
+        {
+          "name": "K",
+          "shape": "U",
+          "machines": 95
+        },
+        {
+          "name": "L",
+          "shape": "U",
+          "machines": 95
+        },
+        {
+          "name": "M",
+          "shape": "U",
+          "machines": 95
+        },
+        {
+          "name": "N",
+          "shape": "U",
+          "machines": 95
+        },
+        {
+          "name": "O",
+          "shape": "U",
+          "machines": 95
+        },
+        {
+          "name": "New-01",
+          "shape": "I",
+          "machines": 66
+        },
+        {
+          "name": "New-02",
+          "shape": "I",
+          "machines": 66
+        },
+        {
+          "name": "New-10",
+          "shape": "I",
+          "machines": 66
+        },
+        {
+          "name": "New-11",
+          "shape": "I",
+          "machines": 66
+        },
+        {
+          "name": "New-12",
+          "shape": "I",
+          "machines": 66
+        },
+        {
+          "name": "New-15",
+          "shape": "I",
+          "machines": 66
+        }
+      ]
+    },
+    {
+      "code": "ASL",
+      "name": "Ananta ASL",
+      "lines": [
+        {
+          "name": "P",
+          "shape": "U",
+          "machines": 95
+        },
+        {
+          "name": "Q",
+          "shape": "U",
+          "machines": 95
+        },
+        {
+          "name": "R",
+          "shape": "U",
+          "machines": 95
+        },
+        {
+          "name": "S",
+          "shape": "U",
+          "machines": 95
+        },
+        {
+          "name": "T",
+          "shape": "U",
+          "machines": 95
+        },
+        {
+          "name": "U",
+          "shape": "U",
+          "machines": 95
+        },
+        {
+          "name": "V",
+          "shape": "U",
+          "machines": 95
+        },
+        {
+          "name": "W",
+          "shape": "U",
+          "machines": 95
+        },
+        {
+          "name": "X",
+          "shape": "U",
+          "machines": 95
+        },
+        {
+          "name": "Y",
+          "shape": "U",
+          "machines": 95
+        },
+        {
+          "name": "Z",
+          "shape": "U",
+          "machines": 95
+        },
+        {
+          "name": "New-04",
+          "shape": "U",
+          "machines": 95
+        },
+        {
+          "name": "New-05",
+          "shape": "U",
+          "machines": 95
+        },
+        {
+          "name": "New-06",
+          "shape": "U",
+          "machines": 95
+        },
+        {
+          "name": "New-07",
+          "shape": "U",
+          "machines": 95
+        },
+        {
+          "name": "New-03",
+          "shape": "I",
+          "machines": 66
+        },
+        {
+          "name": "New-08",
+          "shape": "I",
+          "machines": 66
+        },
+        {
+          "name": "New-09",
+          "shape": "I",
+          "machines": 66
+        },
+        {
+          "name": "New-13",
+          "shape": "I",
+          "machines": 66
+        },
+        {
+          "name": "New-14",
+          "shape": "I",
+          "machines": 66
+        },
+        {
+          "name": "New-16",
+          "shape": "I",
+          "machines": 66
         }
       ]
     },
     {
       "code": "AJL",
       "name": "Ananta Jeanswear Ltd",
-      "floors": [
+      "lines": [
         {
-          "name": "2nd Floor",
-          "lines": [
-            {
-              "no": 1,
-              "shape": "U"
-            },
-            {
-              "no": 2,
-              "shape": "U"
-            },
-            {
-              "no": 3,
-              "shape": "U"
-            },
-            {
-              "no": 4,
-              "shape": "U"
-            },
-            {
-              "no": 5,
-              "shape": "I"
-            },
-            {
-              "no": 6,
-              "shape": "I"
-            },
-            {
-              "no": 7,
-              "shape": "I"
-            },
-            {
-              "no": 8,
-              "shape": "I"
-            },
-            {
-              "no": 9,
-              "shape": "I"
-            },
-            {
-              "no": 10,
-              "shape": "I"
-            }
-          ]
+          "name": "A",
+          "shape": "U",
+          "machines": 80
         },
         {
-          "name": "3rd Floor",
-          "lines": [
-            {
-              "no": 11,
-              "shape": "U"
-            },
-            {
-              "no": 12,
-              "shape": "U"
-            },
-            {
-              "no": 13,
-              "shape": "U"
-            },
-            {
-              "no": 14,
-              "shape": "U"
-            },
-            {
-              "no": 15,
-              "shape": "U"
-            },
-            {
-              "no": 16,
-              "shape": "I"
-            },
-            {
-              "no": 17,
-              "shape": "I"
-            },
-            {
-              "no": 18,
-              "shape": "I"
-            },
-            {
-              "no": 19,
-              "shape": "I"
-            },
-            {
-              "no": 20,
-              "shape": "I"
-            }
-          ]
+          "name": "B",
+          "shape": "U",
+          "machines": 80
+        },
+        {
+          "name": "C",
+          "shape": "U",
+          "machines": 80
+        },
+        {
+          "name": "D",
+          "shape": "U",
+          "machines": 80
+        },
+        {
+          "name": "E",
+          "shape": "U",
+          "machines": 80
+        },
+        {
+          "name": "F",
+          "shape": "U",
+          "machines": 80
+        },
+        {
+          "name": "G",
+          "shape": "U",
+          "machines": 80
+        },
+        {
+          "name": "H",
+          "shape": "U",
+          "machines": 80
+        },
+        {
+          "name": "I",
+          "shape": "U",
+          "machines": 80
+        },
+        {
+          "name": "J",
+          "shape": "U",
+          "machines": 80
+        },
+        {
+          "name": "K",
+          "shape": "U",
+          "machines": 80
+        },
+        {
+          "name": "L",
+          "shape": "U",
+          "machines": 80
+        },
+        {
+          "name": "M",
+          "shape": "U",
+          "machines": 80
+        },
+        {
+          "name": "N",
+          "shape": "U",
+          "machines": 80
+        },
+        {
+          "name": "O",
+          "shape": "U",
+          "machines": 80
+        },
+        {
+          "name": "P",
+          "shape": "U",
+          "machines": 80
+        },
+        {
+          "name": "Q",
+          "shape": "U",
+          "machines": 80
+        },
+        {
+          "name": "R",
+          "shape": "U",
+          "machines": 80
+        },
+        {
+          "name": "S",
+          "shape": "I",
+          "machines": 62
+        },
+        {
+          "name": "T",
+          "shape": "I",
+          "machines": 62
+        },
+        {
+          "name": "U",
+          "shape": "I",
+          "machines": 62
+        },
+        {
+          "name": "V",
+          "shape": "I",
+          "machines": 62
+        },
+        {
+          "name": "W",
+          "shape": "I",
+          "machines": 62
         }
       ]
     },
     {
       "code": "ABM",
       "name": "Ananta Apparel (ABM)",
-      "floors": [
+      "lines": [
         {
-          "name": "Ground Floor",
-          "lines": [
-            {
-              "no": 1,
-              "shape": "U"
-            },
-            {
-              "no": 2,
-              "shape": "U"
-            },
-            {
-              "no": 3,
-              "shape": "U"
-            },
-            {
-              "no": 4,
-              "shape": "U"
-            },
-            {
-              "no": 5,
-              "shape": "U"
-            },
-            {
-              "no": 6,
-              "shape": "I"
-            },
-            {
-              "no": 7,
-              "shape": "I"
-            },
-            {
-              "no": 8,
-              "shape": "I"
-            },
-            {
-              "no": 9,
-              "shape": "I"
-            },
-            {
-              "no": 10,
-              "shape": "I"
-            },
-            {
-              "no": 11,
-              "shape": "I"
-            },
-            {
-              "no": 12,
-              "shape": "I"
-            }
-          ]
+          "name": "6",
+          "shape": "U",
+          "machines": 75
+        },
+        {
+          "name": "7",
+          "shape": "U",
+          "machines": 75
+        },
+        {
+          "name": "8",
+          "shape": "U",
+          "machines": 75
+        },
+        {
+          "name": "14",
+          "shape": "U",
+          "machines": 75
+        },
+        {
+          "name": "15",
+          "shape": "U",
+          "machines": 75
+        },
+        {
+          "name": "16",
+          "shape": "U",
+          "machines": 75
+        },
+        {
+          "name": "1",
+          "shape": "I",
+          "machines": 75
+        },
+        {
+          "name": "2",
+          "shape": "I",
+          "machines": 75
+        },
+        {
+          "name": "3",
+          "shape": "I",
+          "machines": 75
+        },
+        {
+          "name": "4",
+          "shape": "I",
+          "machines": 75
+        },
+        {
+          "name": "5",
+          "shape": "I",
+          "machines": 75
+        },
+        {
+          "name": "9",
+          "shape": "I",
+          "machines": 75
+        },
+        {
+          "name": "10",
+          "shape": "I",
+          "machines": 75
+        },
+        {
+          "name": "11",
+          "shape": "I",
+          "machines": 75
+        },
+        {
+          "name": "12",
+          "shape": "I",
+          "machines": 75
+        },
+        {
+          "name": "13",
+          "shape": "I",
+          "machines": 75
+        },
+        {
+          "name": "17",
+          "shape": "I",
+          "machines": 75
+        },
+        {
+          "name": "18",
+          "shape": "I",
+          "machines": 75
+        },
+        {
+          "name": "19",
+          "shape": "I",
+          "machines": 75
+        },
+        {
+          "name": "20",
+          "shape": "I",
+          "machines": 75
+        },
+        {
+          "name": "21",
+          "shape": "I",
+          "machines": 75
         }
       ]
     }

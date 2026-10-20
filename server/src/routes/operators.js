@@ -8,7 +8,7 @@ r.use(authRequired)
 const mapRow = (o) => ({
   id: o.op_code || o.id, name: o.name, grade: o.grade,
   factory: o.factory_code, floor: o.floor,
-  line: o.line_no, machine: o.machine,
+  line: o.line_label ?? (o.line_no != null ? String(o.line_no) : null), machine: o.machine,
 })
 
 const allowedFactory = (u, code) => u.crossFactory || u.factory === code
@@ -27,11 +27,12 @@ r.get('/', async (req, res, next) => {
 async function insertOperators(factory, list) {
   const clean = (list || []).filter(o => o && o.name)
   for (const o of clean) {
+    const label = o.line != null && String(o.line).trim() !== '' ? String(o.line).trim() : null
     await query(
-      `INSERT INTO operators (factory_code, op_code, name, grade, floor, line_no, machine)
-       VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+      `INSERT INTO operators (factory_code, op_code, name, grade, floor, line_no, line_label, machine)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
       [factory, o.id || null, o.name, o.grade || null, o.floor || null,
-        Number.isFinite(Number(o.line)) && o.line !== '' ? Number(o.line) : null, o.machine || null],
+        Number.isFinite(Number(o.line)) && o.line !== '' ? Number(o.line) : null, label, o.machine || null],
     )
   }
   return clean.length

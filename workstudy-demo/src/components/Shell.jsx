@@ -1,3 +1,4 @@
+import { Fragment } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useStore } from '../store.jsx'
 import { STEPS, getFactory } from '../data/seed.js'
@@ -44,12 +45,20 @@ export function StepSidebar({ style, activeKey }) {
         const done = style.step > s.n
         const active = s.key === activeKey
         return (
-          <div key={s.n} className={`nav-item ${active ? 'active' : ''}`} onClick={() => nav(`/style/${style.id}/${s.key}`)}>
-            <div className="step-no">{done ? '✓' : s.n}</div>
-            <span>{s.label}</span>
-            {s.gate ? <span className="gate" title="Approval gate">🚦</span> : null}
-            {s.low ? <span className="gate" title="Lower priority">·</span> : null}
-          </div>
+          <Fragment key={s.n}>
+            <div className={`nav-item ${active ? 'active' : ''}`} onClick={() => nav(`/style/${style.id}/${s.key}`)}>
+              <div className="step-no">{done ? '✓' : s.n}</div>
+              <span>{s.label}</span>
+              {s.gate ? <span className="gate" title="Approval gate">🚦</span> : null}
+              {s.low ? <span className="gate" title="Lower priority">·</span> : null}
+            </div>
+            {s.key === 'verify' ? (
+              <div className={`nav-item ${activeKey === 'workers' ? 'active' : ''}`} onClick={() => nav(`/style/${style.id}/workers`)}>
+                <div className="step-no">👷</div>
+                <span>Assign Workers</span>
+              </div>
+            ) : null}
+          </Fragment>
         )
       })}
     </aside>

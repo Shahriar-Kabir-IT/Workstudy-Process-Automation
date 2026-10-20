@@ -7,6 +7,7 @@ import { BarChart } from '../components/charts.jsx'
 import { FACTORIES, floorsForFactory, lineCount, STEPS, linesOf } from '../data/seed.js'
 import { computeOB } from '../engine/calc.js'
 import { ObTable, ObVersionList, ObDiff } from '../components/ObReview.jsx'
+import { MachineLayoutView } from '../components/MachineLayout.jsx'
 import { appendVersion, prevApprovedOps } from '../engine/obdiff.js'
 
 const U_COLOR = '#16a34a', I_COLOR = '#eab308'   // vivid green (U) / vivid yellow (I)
@@ -23,6 +24,7 @@ export default function AdminLayout() {
   const { section = 'overview' } = useParams()
   const [act, setAct] = useState(null)
   const [detail, setDetail] = useState(null)
+  const [lineView, setLineView] = useState(null)
   if (!TABS.some(t => t.key === section)) return <Navigate to="/admin/overview" />
 
   // pending approvals
@@ -38,7 +40,7 @@ export default function AdminLayout() {
     if (a.type === 'sample') updateStyle(s.id, ok ? { sampleApproved: true, sampleRejected: null, step: Math.max(s.step, 3) } : { sampleApproved: false, sampleRejected: { by }, step: 2 })
     else if (a.type === 'ob') updateStyle(s.id, ok ? { obApproved: true, approvedBy: by, step: Math.max(s.step, 5), status: 'Line Layout', obRejected: null, changeRequest: null, obHistory: appendVersion(s, by) } : { obApproved: false, step: 3, status: 'Operation Breakdown', obRejected: { by } })
     else if (a.type === 'change') updateStyle(s.id, { changeRequest: { ...s.changeRequest, status: ok ? 'approved' : 'rejected', decidedBy: by } })
-    else if (a.type === 'verify') updateStyle(s.id, ok ? { layoutVerified: true, step: Math.max(s.step, 9), status: 'Cycle Time' } : { layoutVerified: false, step: 5, status: 'Line Layout' })
+    else if (a.type === 'verify') updateStyle(s.id, ok ? { layoutVerified: true, step: Math.max(s.step, 7), status: 'Assign Workers' } : { layoutVerified: false, step: 5, status: 'Line Layout' })
     setAct(null)
   }
 
@@ -65,12 +67,13 @@ export default function AdminLayout() {
           {section === 'overview' && <Overview user={user} kpis={kpis} allStyles={allStyles} />}
           {section === 'approvals' && <Approvals actions={actions} onOpen={setAct} />}
           {section === 'styles' && <Styles allStyles={allStyles} onOpen={setDetail} />}
-          {section === 'lines' && <Lines occ={occ} />}
+          {section === 'lines' && <Lines occ={occ} onOpenLine={setLineView} />}
         </div>
       </div>
 
       {act ? <ApprovalModal act={act} photos={photos} onDecide={decide} onClose={() => setAct(null)} /> : null}
       {detail ? <StyleDetailModal s={detail} photos={photos} onClose={() => setDetail(null)} /> : null}
+      {lineView ? <LineLayoutModal s={lineView} onClose={() => setLineView(null)} /> : null}
     </div>
   )
 }
@@ -157,10 +160,10 @@ function Styles({ allStyles, onOpen }) {
   )
 }
 
-function Lines({ occ }) {
+function Lines({ occ, onOpenLine }) {
   return (
     <>
-      <div className="page-head"><div><h1>🏭 Line Board</h1><div className="sub">which style runs on which line, per factory</div></div></div>
+      <div className="page-head"><div><h1>🏭 Line Board</h1><div className="sub">which style runs on which line · click a running line to see its full machine layout</div></div></div>
       {FACTORIES.map(f => {
         const floors = floorsForFactory(f.code)
         const running = Object.keys(occ[f.code]).length
@@ -176,13 +179,13 @@ function Lines({ occ }) {
                       const s = occ[f.code][l.no]
                       const c = l.shape === 'U' ? U_COLOR : I_COLOR
                       const fg = s ? onFill(l.shape) : 'var(--muted)'
-                      const lineOps = s ? (s.ops || []).filter(o => (s.opLine || {})[o.sl] === l.no) : []
-                      const proc = s ? (lineOps.length ? (lineOps.length === 1 ? lineOps[0].name : `${lineOps[0].name} +${lineOps.length - 1}`) : (s.obName || '—')) : null
+                      const proc = s ? (s.ops?.length ? (s.ops.length === 1 ? s.ops[0].name : `${s.ops[0].name} +${s.ops.length - 1}`) : (s.obName || '—')) : null
                       return (
-                        <div key={l.no} title={s ? `Line ${l.no} · ${s.styleNo} — ${s.item}${proc ? ' · ' + proc : ''} · ${s.buyer} (${s.status})` : `Line ${l.no} · free`}
-                          style={{ width: 150, borderRadius: 8, padding: '7px 9px', border: `1px solid ${s ? c : 'var(--line)'}`, background: s ? c : '#fff', color: fg }}>
+                        <div key={l.no} onClick={() => s && onOpenLine(s)}
+                          title={s ? `Line ${l.no} · ${s.styleNo} — ${s.item}${proc ? ' · ' + proc : ''} · ${s.buyer} (${s.status}) · click to view layout` : `Line ${l.no} · ${l.machines} machines · free`}
+                          style={{ width: 150, borderRadius: 8, padding: '7px 9px', border: `1px solid ${s ? c : 'var(--line)'}`, background: s ? c : '#fff', color: fg, cursor: s ? 'pointer' : 'default' }}>
                           <div className="flex" style={{ justifyContent: 'space-between' }}>
-                            <b style={{ fontSize: 11.5 }}>L{l.no}</b>
+                            <b style={{ fontSize: 11.5 }}>{l.no}</b>
                             <span style={{ fontSize: 8.5, fontWeight: 800, padding: '1px 5px', borderRadius: 4, background: s ? 'rgba(0,0,0,.14)' : c, color: s ? fg : onFill(l.shape) }}>{l.shape}</span>
                           </div>
                           {s ? (
@@ -252,33 +255,11 @@ function ApprovalModal({ act, photos, onDecide, onClose }) {
           {act.type === 'verify' ? (
             <>
               <div className="grid cols-3" style={{ marginBottom: 12 }}>
-                <Stat label="Lines" value={lines.length} foot={lines.map(l => 'L' + l.no).join(', ')} />
-                <Stat label="Assigned ops" value={(s.ops || []).filter(o => lines.some(l => l.no === (s.opLine || {})[o.sl])).length} />
+                <Stat label="Line" value={s.layoutLine ? s.layoutLine.name : '—'} foot={s.layoutLine ? `${s.layoutLine.shape}-Shape · ${s.layoutLine.machines} machines` : ''} />
+                <Stat label="Machines used" value={Object.keys(s.machineOps || {}).length} />
                 <Stat label="Total SMV" value={ob ? ob.totalSMV : '—'} unit="min" />
               </div>
-              <div className="muted" style={{ fontSize: 12, fontWeight: 700, margin: '14px 0 8px' }}>LAYOUT — operations per line</div>
-              <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill,minmax(230px,1fr))', gap: 10 }}>
-                {lines.map(l => {
-                  const list = (s.ops || []).filter(o => (s.opLine || {})[o.sl] === l.no)
-                  const c = l.shape === 'U' ? '#16a34a' : '#eab308'
-                  return (
-                    <div key={l.no} style={{ border: `2px solid ${c}`, borderRadius: 11, overflow: 'hidden' }}>
-                      <div style={{ background: c, color: l.shape === 'U' ? '#fff' : '#1f2937', padding: '7px 11px', fontWeight: 700, fontSize: 12.5, display: 'flex', justifyContent: 'space-between' }}>
-                        <span>{l.floor} · L{l.no} ({l.shape})</span><span>{list.length} op</span>
-                      </div>
-                      <div style={{ padding: 9 }}>
-                        {list.length ? list.map((o, i) => (
-                          <div key={o.sl} className="flex" style={{ gap: 7, padding: '4px 0' }}>
-                            <span style={{ width: 17, height: 17, borderRadius: 5, background: c, color: l.shape === 'U' ? '#fff' : '#1f2937', display: 'grid', placeItems: 'center', fontSize: 9.5, fontWeight: 800 }}>{i + 1}</span>
-                            <span style={{ flex: 1, fontSize: 12, fontWeight: 600 }}>{o.name}</span>
-                            <span className="mono muted" style={{ fontSize: 11 }}>{o.smv.toFixed(2)}</span>
-                          </div>
-                        )) : <div className="center muted" style={{ fontSize: 11.5, padding: '10px 0' }}>no operations</div>}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
+              <MachineLayoutView style={s} maxHeight={360} />
             </>) : null}
         </div>
         <div className="card-head" style={{ borderTop: '1px solid var(--line)', borderBottom: 'none', justifyContent: 'flex-end', gap: 8 }}>
@@ -291,11 +272,36 @@ function ApprovalModal({ act, photos, onDecide, onClose }) {
   )
 }
 
+function LineLayoutModal({ s, onClose }) {
+  const ob = s.ops?.length ? computeOB(s.ops, s.manpower) : null
+  const used = Object.keys(s.machineOps || {}).length
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(2,8,23,.55)', display: 'grid', placeItems: 'center', zIndex: 60, padding: 24 }}>
+      <div onClick={e => e.stopPropagation()} className="card" style={{ width: 'min(960px, 97vw)', maxHeight: '92vh', overflow: 'auto' }}>
+        <div className="card-head"><h3>Line {s.layoutLine?.name || s.line || '—'} — Machine Layout</h3><span className="hint">{s.styleNo} · {s.item} · {s.buyer} · {s.factory}</span></div>
+        <div className="card-pad">
+          {s.layoutLine ? (
+            <>
+              <div className="grid cols-4" style={{ marginBottom: 14 }}>
+                <Stat label="Shape" value={`${s.layoutLine.shape}-Shape`} />
+                <Stat label="Machines used" value={`${used} / ${s.layoutLine.machines}`} />
+                <Stat label="Processes" value={(s.ops || []).length} />
+                <Stat label="Total SMV" value={ob ? ob.totalSMV : '—'} unit="min" accent="#2563eb" />
+              </div>
+              <MachineLayoutView style={s} maxHeight={520} />
+            </>
+          ) : <Note>This style has no line layout yet.</Note>}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function StyleDetailModal({ s, photos, onClose }) {
   const ob = s.ops?.length ? computeOB(s.ops, s.manpower) : null
   const pics = photos[s.id] || []
   const ls = linesOf(s)
-  const placedCount = (s.ops || []).filter(o => (s.opLine || {})[o.sl] != null).length
+  const placedCount = new Set(Object.values(s.machineOps || {}).flat()).size
   const stepLabel = STEPS.find(x => x.n === s.step)?.label
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(2,8,23,.55)', display: 'grid', placeItems: 'center', zIndex: 60, padding: 24 }}>
@@ -324,8 +330,8 @@ function StyleDetailModal({ s, photos, onClose }) {
             <div className="muted" style={{ fontSize: 12, fontWeight: 700, marginBottom: 6 }}>LINE ASSIGNMENT{ls.length ? ` · ${ls.length} line${ls.length > 1 ? 's' : ''}` : ''}</div>
             {ls.length ? (
               <div className="flex wrap" style={{ gap: 8 }}>
-                {ls.map(l => <span key={l.no} style={{ background: l.shape === 'U' ? '#dcfce7' : '#fef9c3', color: l.shape === 'U' ? '#166534' : '#854d0e', borderRadius: 999, padding: '4px 10px', fontSize: 12, fontWeight: 600 }}>{l.floor} · L{l.no} ({l.shape})</span>)}
-                <span className="muted" style={{ fontSize: 12, alignSelf: 'center' }}>· {placedCount} stations placed</span>
+                {ls.map(l => <span key={l.no} style={{ background: l.shape === 'U' ? '#dcfce7' : '#fef9c3', color: l.shape === 'U' ? '#166534' : '#854d0e', borderRadius: 999, padding: '4px 10px', fontSize: 12, fontWeight: 600 }}>Line {l.no} ({l.shape}-Shape · {l.machines} machines)</span>)}
+                <span className="muted" style={{ fontSize: 12, alignSelf: 'center' }}>· {placedCount} processes placed</span>
               </div>) : <span className="muted" style={{ fontSize: 13 }}>Not assigned to any line yet.</span>}
           </div>
           {pics.length ? (

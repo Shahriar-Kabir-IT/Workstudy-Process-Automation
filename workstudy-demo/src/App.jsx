@@ -14,6 +14,7 @@ import OperationBreakdown from './pages/OperationBreakdown.jsx'
 import OBApproval from './pages/OBApproval.jsx'
 import LineLayout from './pages/LineLayout.jsx'
 import LayoutVerification from './pages/LayoutVerification.jsx'
+import AssignWorker from './pages/AssignWorker.jsx'
 import ProductionPlan from './pages/ProductionPlan.jsx'
 import Changeover from './pages/Changeover.jsx'
 import CycleTime from './pages/CycleTime.jsx'
@@ -21,7 +22,7 @@ import SkillMatrix from './pages/SkillMatrix.jsx'
 
 const STEP_PAGES = {
   order: OrderDetails, sample: ApprovedSample, ob: OperationBreakdown,
-  approval: OBApproval, layout: LineLayout, verify: LayoutVerification,
+  approval: OBApproval, layout: LineLayout, verify: LayoutVerification, workers: AssignWorker,
   plan: ProductionPlan, changeover: Changeover, cycle: CycleTime, skill: SkillMatrix,
 }
 
@@ -37,7 +38,7 @@ function StyleFlow() {
       <StepSidebar style={style} activeKey={step} />
       <div className="main">
         <Topbar crumbs={<><b>{style.styleNo}</b> · {style.item} · <span>{style.buyer}</span></>} />
-        <div className="content"><Page style={style} /></div>
+        <div className="content"><Page key={id + '/' + step} style={style} /></div>
       </div>
     </div>
   )

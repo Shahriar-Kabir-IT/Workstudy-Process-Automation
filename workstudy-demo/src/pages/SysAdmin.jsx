@@ -116,13 +116,15 @@ function UserModal({ meta, initial, onClose, onSaved }) {
   const [f, setF] = useState(initial ? { ...emptyForm, ...initial, factory: initial.factory || '', password: '' } : emptyForm)
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
+  const [changePw, setChangePw] = useState(!editing)   // edit: only touch password when explicitly asked
   const set = (k, v) => setF(s => ({ ...s, [k]: v }))
 
   const save = async () => {
     setErr(''); setBusy(true)
     try {
       const body = { name: f.name, username: f.username, role: f.role, factory: f.factory || null, crossFactory: f.crossFactory, lines: f.lines, active: f.active }
-      if (f.password) body.password = f.password
+      // only ever send a password when the admin explicitly set one (never on a plain edit)
+      if ((!editing || changePw) && f.password) body.password = f.password
       if (editing) await api.admin.updateUser(initial.id, body)
       else { if (!f.password) throw new Error('Password is required'); await api.admin.createUser(body) }
       onSaved()
@@ -137,7 +139,15 @@ function UserModal({ meta, initial, onClose, onSaved }) {
           <div className="grid cols-2">
             <div className="field"><label>Full Name</label><input className="inp" value={f.name} onChange={e => set('name', e.target.value)} /></div>
             <div className="field"><label>Username</label><input className="inp" value={f.username} onChange={e => set('username', e.target.value)} placeholder="e.g. agl.wse" /></div>
-            <div className="field"><label>{editing ? 'New Password (leave blank to keep)' : 'Password'}</label><input className="inp" type="password" value={f.password} onChange={e => set('password', e.target.value)} /></div>
+            <div className="field"><label>Password</label>
+              {editing && !changePw ? (
+                <button type="button" className="btn" style={{ height: 38 }} onClick={() => setChangePw(true)}>🔑 Set a new password</button>
+              ) : (
+                <input className="inp" type="password" autoComplete="new-password" name="new-password-field"
+                  value={f.password} onChange={e => set('password', e.target.value)}
+                  placeholder={editing ? 'enter a new password' : ''} autoFocus={editing} />
+              )}
+            </div>
             <div className="field"><label>Role</label>
               <select className="inp" value={f.role} onChange={e => set('role', e.target.value)}>
                 {meta.roles.map(r => <option key={r.code} value={r.code}>{r.label}</option>)}

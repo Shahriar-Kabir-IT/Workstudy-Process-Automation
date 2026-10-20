@@ -22,6 +22,7 @@ export default function OperationBreakdown({ style }) {
     const m = row.machine || 'SNLS'
     push({ name: row.name, machine: m, smv: row.smv, aml: row.aml || 1, section: row.section, manual: m === 'Manual' || m === 'HP', fromLibrary: true })
   }
+  const addQC = () => push({ name: 'Quality Inspection', machine: 'QC', smv: 0, aml: 1, section: 'QUALITY', qc: true })
   const removeOp = (sl) => updateStyle(style.id, { ops: ops.filter(o => o.sl !== sl).map((o, i) => ({ ...o, sl: i + 1 })) })
   const submit = () => { updateStyle(style.id, { step: Math.max(style.step, 4), status: 'OB Approval' }); nav(`/style/${style.id}/approval`) }
   const createNewOB = () => updateStyle(style.id, { obApproved: false, approvedBy: null, obVersion: (style.obVersion || 1) + 1, step: 3, status: 'Operation Breakdown', layoutVerified: false, changeRequest: null, obRejected: null })
@@ -83,7 +84,9 @@ export default function OperationBreakdown({ style }) {
       {/* Add from the OB library (PostgreSQL) */}
       {!locked && canPrepare ? (
         <div className="card mt">
-          <div className="card-head"><h3>Add Operation</h3><span className="hint">from the OB Library</span></div>
+          <div className="card-head"><h3>Add Operation</h3>
+            <button className="btn sm" onClick={addQC} title="Add a Quality Inspection process (no SMV)">🔍 + Quality Inspection</button>
+          </div>
           <div className="card-pad"><ObLibraryPicker onAdd={addFromLibrary} existing={ops} /></div>
         </div>
       ) : null}
