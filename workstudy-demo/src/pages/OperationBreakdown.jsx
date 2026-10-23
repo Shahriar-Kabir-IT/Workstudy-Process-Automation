@@ -87,16 +87,25 @@ export default function OperationBreakdown({ style }) {
       {/* Add from the OB library (PostgreSQL) */}
       {!locked && canPrepare ? (
         <div className="card mt">
-          <div className="card-head"><h3>Add Operation</h3>
-            <span className="flex" style={{ gap: 8 }}>
-              <select className="inp" value={nnvaSel} onChange={e => { addNNVA(e.target.value); setNnvaSel('') }} style={{ height: 30, fontSize: 12, maxWidth: 220 }} title="Add a Necessary Non-Value-Added process">
-                <option value="">+ NNVA process…</option>
-                {NNVA_LIBRARY.map(x => <option key={x} value={x}>{x}</option>)}
-              </select>
-              <button className="btn sm" onClick={addQC} title="Add a Quality Inspection process (no SMV)">🔍 + Quality Inspection</button>
-            </span>
+          <div className="card-head"><h3>Add Operation</h3></div>
+          <div className="card-pad">
+            {/* quick add: non-value-added & quality steps (no SMV) */}
+            <div className="ob-quickadd">
+              <div className="field" style={{ minWidth: 260, flex: 1, maxWidth: 360 }}>
+                <label>➕ NNVA process <span className="muted">· necessary non-value-added (SMV 0)</span></label>
+                <select className="inp" value={nnvaSel} onChange={e => { addNNVA(e.target.value); setNnvaSel('') }} title="Add a Necessary Non-Value-Added process">
+                  <option value="">Select an NNVA process to add…</option>
+                  {NNVA_LIBRARY.map(x => <option key={x} value={x}>{x}</option>)}
+                </select>
+              </div>
+              <div className="field" style={{ minWidth: 150 }}>
+                <label>Quality step</label>
+                <button className="btn" onClick={addQC} title="Add a Quality Inspection process (no SMV)" style={{ height: 38 }}>🔍 + Quality Inspection</button>
+              </div>
+            </div>
+            <div className="ob-quickadd-sep"><span>or pick a value-added process from the library</span></div>
+            <ObLibraryPicker onAdd={addFromLibrary} existing={ops} />
           </div>
-          <div className="card-pad"><ObLibraryPicker onAdd={addFromLibrary} existing={ops} /></div>
         </div>
       ) : null}
 
