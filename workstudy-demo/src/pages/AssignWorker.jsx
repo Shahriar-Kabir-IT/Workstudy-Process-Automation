@@ -116,7 +116,7 @@ export default function AssignWorker({ style }) {
             return (
               <div key={m} className="aw-card" style={{ borderColor: assigned ? '#16a34a' : 'var(--line)' }}>
                 <div className="aw-card-head">
-                  <b>Machine M{m}</b>
+                  <b>W{m}</b>
                   <span className="aw-card-load" style={{ color: col }}>{loadOf(m).toFixed(2)} min{assigned ? ' · ✓' : ''}</span>
                 </div>
                 <div className="aw-procs">
@@ -135,7 +135,7 @@ export default function AssignWorker({ style }) {
                   {candFor(m).map(o => {
                     const at = assignedAt[o.id]
                     const busy = at && String(at) !== String(m)
-                    return <option key={o.id} value={o.id}>{o.name} · {o.grade || '?'} · {o.machine || '—'}{busy ? ` — ⚠ already on M${at}` : ''}</option>
+                    return <option key={o.id} value={o.id}>{o.name} · {o.grade || '?'} · {o.machine || '—'}{busy ? ` — ⚠ already on W${at}` : ''}</option>
                   })}
                 </select>
               </div>
@@ -156,7 +156,7 @@ export default function AssignWorker({ style }) {
                 const o = opBySl[sl]
                 return (
                   <tr key={g.m + '-' + sl} style={i === 0 && g.list.length > 1 ? { borderTop: '2px solid var(--line)' } : null}>
-                    {i === 0 ? <td className="mono" rowSpan={g.list.length} style={{ verticalAlign: 'middle', fontWeight: 700 }}>M{g.m}{g.list.length > 1 ? <span className="muted" style={{ fontSize: 10, display: 'block', fontWeight: 400 }}>{g.list.length} processes</span> : null}</td> : null}
+                    {i === 0 ? <td className="mono" rowSpan={g.list.length} style={{ verticalAlign: 'middle', fontWeight: 700 }}>W{g.m}{g.list.length > 1 ? <span className="muted" style={{ fontSize: 10, display: 'block', fontWeight: 400 }}>{g.list.length} processes</span> : null}</td> : null}
                     <td style={{ whiteSpace: 'nowrap' }}><b>{o?.name}</b></td>
                     <td><span className="muted" style={{ fontSize: 11.5 }}>{o?.section || '—'}</span></td>
                     <td><Badge tone={o?.machine === 'QC' ? 'violet' : o?.machine === 'Manual' || o?.machine === 'HP' ? 'gray' : 'blue'}>{o?.machine}</Badge></td>

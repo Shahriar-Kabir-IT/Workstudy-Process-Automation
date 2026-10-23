@@ -15,38 +15,46 @@ const ROUNDS = [
 const avgOf = (reads) => { const r = (reads || []).map(Number).filter(x => x > 0); return r.length ? r.reduce((a, b) => a + b, 0) / r.length : 0 }
 const emptyStudy = { obs: {}, nnva: [], currentPcs: '', plannedPcs: '', header: {} }
 
-// balancing control chart: capacity bar per station + mean / UCL / LCL capacity lines
+// balancing control chart: capacity LINE across stations + mean / UCL / LCL control lines
 function BalanceChart({ caps, mean, hi, lo }) {
-  const W = 920, H = 230, pad = { l: 40, r: 10, t: 14, b: 40 }
+  const W = 960, H = 250, pad = { l: 38, r: 12, t: 30, b: 44 }
   const iw = W - pad.l - pad.r, ih = H - pad.t - pad.b
   const n = caps.length || 1
-  const bw = iw / n
-  const max = Math.max(mean, hi, ...caps.map(c => c.value), 1) * 1.1
+  const cw = iw / n
+  const max = Math.max(mean, hi, ...caps.map(c => c.value), 1) * 1.08
   const y = (v) => pad.t + ih - (v / max) * ih
-  const line = (v, color, dash, label) => (
-    <g>
-      <line x1={pad.l} y1={y(v)} x2={W - pad.r} y2={y(v)} stroke={color} strokeWidth="1.5" strokeDasharray={dash} />
-      <text x={W - pad.r} y={y(v) - 3} textAnchor="end" fontSize="9" fill={color} fontWeight="700">{label} {Math.round(v)}</text>
-    </g>
-  )
+  const cx = (i) => pad.l + i * cw + cw / 2
+  const step = Math.ceil(n / 46)
+  const colOf = (v) => v < lo ? '#dc2626' : v > hi ? '#2563eb' : '#16a34a'   // below lower = bottleneck
+  const pts = caps.map((c, i) => `${cx(i).toFixed(1)},${y(c.value).toFixed(1)}`).join(' ')
+  const legend = [
+    { c: '#0891b2', t: `Upper ${Math.round(hi)}`, d: '4 3' },
+    { c: '#16a34a', t: `Bpt ${Math.round(mean)}`, d: '0' },
+    { c: '#dc2626', t: `Lower ${Math.round(lo)}`, d: '4 3' },
+  ]
   return (
     <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', display: 'block' }}>
+      {legend.map((g, i) => (
+        <g key={i} transform={`translate(${pad.l + i * 150}, 12)`}>
+          <line x1={0} y1={0} x2={18} y2={0} stroke={g.c} strokeWidth="2.5" strokeDasharray={g.d} />
+          <text x={23} y={3.5} fontSize="11" fill={g.c} fontWeight="700">{g.t}</text>
+        </g>
+      ))}
       {[0, 0.5, 1].map((f, i) => <line key={i} x1={pad.l} y1={y(max * f)} x2={W - pad.r} y2={y(max * f)} stroke="#eef2f7" />)}
-      {caps.map((c, i) => {
-        const col = c.value < lo ? '#dc2626' : c.value > hi ? '#2563eb' : '#16a34a'   // below lower cap = bottleneck
-        const h = Math.max(0, pad.t + ih - y(c.value))
-        return (
-          <g key={i}>
-            <rect x={pad.l + i * bw + bw * 0.15} y={y(c.value)} width={bw * 0.7} height={h} rx="2" fill={col} opacity="0.85">
-              <title>{c.label}: {c.value}/hr</title>
-            </rect>
-            <text x={pad.l + i * bw + bw / 2} y={H - 26} textAnchor="end" fontSize="7.5" fill="#94a3b8" transform={`rotate(-60 ${pad.l + i * bw + bw / 2} ${H - 26})`}>{c.label}</text>
-          </g>
-        )
-      })}
-      {line(hi, '#0891b2', '4 3', 'Upper')}
-      {line(mean, '#16a34a', '0', 'Bpt')}
-      {line(lo, '#dc2626', '4 3', 'Lower')}
+      {/* control lines */}
+      <line x1={pad.l} y1={y(hi)} x2={W - pad.r} y2={y(hi)} stroke="#0891b2" strokeWidth="1.3" strokeDasharray="4 3" />
+      <line x1={pad.l} y1={y(mean)} x2={W - pad.r} y2={y(mean)} stroke="#16a34a" strokeWidth="1.6" />
+      <line x1={pad.l} y1={y(lo)} x2={W - pad.r} y2={y(lo)} stroke="#dc2626" strokeWidth="1.3" strokeDasharray="4 3" />
+      {/* capacity line + colored markers */}
+      <polyline points={pts} fill="none" stroke="#475569" strokeWidth="1.6" strokeLinejoin="round" />
+      {caps.map((c, i) => (
+        <g key={i}>
+          <circle cx={cx(i)} cy={y(c.value)} r="3.2" fill={colOf(c.value)} stroke="#fff" strokeWidth="1">
+            <title>{c.label} · {c.name} — {c.value} pcs/hr</title>
+          </circle>
+          {i % step === 0 ? <text x={cx(i)} y={H - 30} textAnchor="end" fontSize="8" fill="#94a3b8" transform={`rotate(-55 ${cx(i)} ${H - 30})`}>{c.label}</text> : null}
+        </g>
+      ))}
     </svg>
   )
 }
@@ -89,14 +97,12 @@ export default function CycleTime({ style }) {
     )
   }
 
-  // stations = machines (with their processes + assigned operator) + NNVA
-  const machineStations = Object.keys(mops).map(Number).filter(m => (mops[m] || []).length).sort((a, b) => a - b)
+  // stations = machines (with their processes + assigned operator). NNVA is an OB process placed in the layout, so it shows up here too.
+  const stations = Object.keys(mops).map(Number).filter(m => (mops[m] || []).length).sort((a, b) => a - b)
     .map(m => {
       const procs = (mops[m] || []).map(sl => opBySl[sl]).filter(Boolean)
-      return { key: 'M' + m, label: 'M' + m, name: procs.map(p => p.name).join(' + '), machine: procs.map(p => p.machine).join('/'), smv: procs.reduce((s, p) => s + (p.smv || 0), 0), defaultOp: machineWorker[m], nnva: false }
+      return { key: 'M' + m, label: 'W' + m, name: procs.map(p => p.name).join(' + '), machine: procs.map(p => p.machine).join('/'), smv: procs.reduce((s, p) => s + (p.smv || 0), 0), defaultOp: machineWorker[m], nnva: procs.some(p => p.nnva) }
     })
-  const nnvaStations = (study.nnva || []).map((x, i) => ({ key: 'N' + x.id, label: 'NNVA', name: x.name || `NNVA ${i + 1}`, machine: x.machine || '—', smv: 0, defaultOp: x.op, nnva: true, idx: i }))
-  const stations = [...machineStations, ...nnvaStations]
 
   const obsFor = (key) => study.obs?.[key] || {}
   const readsOf = (key) => obsFor(key).reads || []
@@ -108,6 +114,7 @@ export default function CycleTime({ style }) {
     obs[key] = { ...(obs[key] || {}), reads }
     patch({ obs })
   }
+  const clearRead = (key, idx) => setRead(key, idx, '')
   const setOp = (key, opId) => { const obs = { ...(study.obs || {}) }; obs[key] = { ...(obs[key] || {}), op: opId }; patch({ obs }) }
   // stopwatch: ▶ start → ■ stop records the elapsed minutes into the first empty of the 5 reading slots
   const recordRead = (key, minutes) => {
@@ -119,9 +126,12 @@ export default function CycleTime({ style }) {
     if (timer && timer.key === key) { recordRead(key, (Date.now() - timer.start) / 60000); setTimer(null) }
     else setTimer({ key, start: Date.now() })
   }
-  const addNNVA = () => patch({ nnva: [...(study.nnva || []), { id: Date.now().toString(36), name: '', machine: 'HP', op: '' }] })
-  const setNNVA = (i, k, v) => { const nnva = (study.nnva || []).map((x, j) => j === i ? { ...x, [k]: v } : x); patch({ nnva }) }
-  const removeNNVA = (i) => { const nnva = (study.nnva || []).filter((_, j) => j !== i); patch({ nnva }) }
+
+  // a round is complete only when EVERY station has all 5 readings; completing LOCKS it (read-only)
+  const stDone = (key) => [0, 1, 2, 3, 4].every(i => Number(readsOf(key)[i]) > 0)
+  const doneCount = stations.filter(st => stDone(st.key)).length
+  const allComplete = stations.length > 0 && doneCount === stations.length
+  const locked = allComplete
 
   // ---- calculations ----
   const rows = stations.map(st => { const a = round(avgOf(readsOf(st.key)), 3); return { ...st, avg: a, cap: a > 0 ? Math.floor(60 / a) : 0 } })
@@ -148,7 +158,7 @@ export default function CycleTime({ style }) {
   const peakEff = workers && smv ? effPct(plannedPcs, smv, workers) : 0
   const currentEff = workers && smv ? effPct(currentPcs, smv, workers) : 0
 
-  const caps = observed.map(r => ({ label: (r.name || '').split(' ').slice(0, 3).join(' '), value: r.cap }))
+  const caps = observed.map(r => ({ label: r.label, name: r.name, value: r.cap }))
   const H = study.header || {}
   const setH = (k, v) => patch({ header: { ...H, [k]: v } })
 
@@ -158,7 +168,11 @@ export default function CycleTime({ style }) {
     <div>
       <div className="page-head">
         <div><h1>9 · Cycle Time</h1><div className="sub">Operator time study on the verified layout · 5 readings per station</div></div>
-        <button className="btn primary" onClick={() => { updateStyle(style.id, { cycleStudies: studies, step: Math.max(style.step, 10), status: 'Skill Matrix' }); nav(`/style/${style.id}/skill`) }}>Next: Skill Matrix →</button>
+        <div className="flex" style={{ gap: 10, alignItems: 'center' }}>
+          <Badge tone={allComplete ? 'green' : 'amber'}>{allComplete ? '🔒 Complete & locked' : `${doneCount}/${stations.length} stations done`}</Badge>
+          <button className="btn primary" disabled={!allComplete} title={allComplete ? '' : 'Capture all 5 cycles for every station first'}
+            onClick={() => { updateStyle(style.id, { cycleStudies: studies, step: Math.max(style.step, 10), status: 'Skill Matrix' }); nav(`/style/${style.id}/skill`) }}>Next: Skill Matrix →</button>
+        </div>
       </div>
       <div style={{ marginBottom: 14 }}><ProgressRail step={style.step} /></div>
 
@@ -215,7 +229,7 @@ export default function CycleTime({ style }) {
       {/* observation grid */}
       <div className="card mt">
         <div className="card-head"><h3>Observation — Round {roundN}</h3>
-          <button className="btn sm" onClick={addNNVA} title="Add a Necessary Non-Value-Added process">➕ Add NNVA</button>
+          <span className="hint">{locked ? '🔒 Round complete & locked — delete a cycle (✕) to re-measure' : 'capture 5 cycles per station · ✕ deletes a cycle'}</span>
         </div>
         <div className="table-wrap" style={{ border: 'none', borderRadius: 0, maxHeight: 460 }}>
           <table className="ct-table">
@@ -224,45 +238,37 @@ export default function CycleTime({ style }) {
               {rows.map(st => {
                 const reads = readsOf(st.key)
                 const within = st.avg > 0 && b && st.avg <= U && st.avg >= L
+                const running = timer && timer.key === st.key
+                const full = stDone(st.key)
+                const secs = running ? ((nowTs - timer.start) / 1000).toFixed(1) : null
                 return (
                   <tr key={st.key} style={st.nnva ? { background: '#faf7ff' } : null}>
-                    <td className="mono">{st.nnva ? <Badge tone="violet">NNVA</Badge> : st.label}</td>
-                    <td style={{ minWidth: 150 }}>
-                      {st.nnva
-                        ? <input className="inp ct-in" value={study.nnva[st.idx]?.name || ''} onChange={e => setNNVA(st.idx, 'name', e.target.value)} placeholder="NNVA process name" />
-                        : <b style={{ fontSize: 11.5 }}>{st.name}</b>}
-                    </td>
-                    <td>{st.nnva
-                      ? <input className="inp ct-in" style={{ width: 56 }} value={study.nnva[st.idx]?.machine || ''} onChange={e => setNNVA(st.idx, 'machine', e.target.value)} />
-                      : <Badge tone="blue">{st.machine}</Badge>}</td>
+                    <td className="mono"><b>{st.label}</b></td>
+                    <td style={{ minWidth: 150 }}><b style={{ fontSize: 11.5 }}>{st.name}</b> {st.nnva ? <Badge tone="violet">NNVA</Badge> : null}</td>
+                    <td><Badge tone="blue">{st.machine}</Badge></td>
                     <td>
-                      <select className="inp ct-in" style={{ minWidth: 120 }} value={opFor(st)} onChange={e => setOp(st.key, e.target.value)}>
+                      <select className="inp ct-in" style={{ minWidth: 120 }} value={opFor(st)} disabled={full} onChange={e => setOp(st.key, e.target.value)}>
                         <option value="">— operator —</option>
                         {lineOperators.map(o => <option key={o.id} value={o.id}>{o.name} · {o.grade}</option>)}
                       </select>
                     </td>
                     <td>
-                      {(() => {
-                        const running = timer && timer.key === st.key
-                        const full = [0, 1, 2, 3, 4].every(i => Number(reads[i]) > 0)
-                        const secs = running ? ((nowTs - timer.start) / 1000).toFixed(1) : null
-                        return (
-                          <button className="btn sm" disabled={!running && full}
-                            style={{ minWidth: 76, background: running ? '#dc2626' : full ? undefined : '#16a34a', color: running || !full ? '#fff' : undefined, borderColor: running ? '#dc2626' : full ? undefined : '#16a34a' }}
-                            onClick={() => toggleTimer(st.key)} title={running ? 'Stop & record' : full ? 'All 5 captured' : 'Start timing this cycle'}>
-                            {running ? `■ ${secs}s` : full ? '✓ 5/5' : '▶ Start'}
-                          </button>
-                        )
-                      })()}
+                      <button className="btn sm" disabled={full && !running}
+                        style={{ minWidth: 76, background: running ? '#dc2626' : full ? undefined : '#16a34a', color: running || !full ? '#fff' : undefined, borderColor: running ? '#dc2626' : full ? undefined : '#16a34a' }}
+                        onClick={() => toggleTimer(st.key)} title={running ? 'Stop & record' : full ? 'All 5 captured — delete a cycle to re-time' : 'Start timing this cycle'}>
+                        {running ? `■ ${secs}s` : full ? '✓ 5/5' : '▶ Start'}
+                      </button>
                     </td>
                     {[0, 1, 2, 3, 4].map(i => (
-                      <td key={i} className="num"><input className="inp ct-read" type="number" step="0.01" value={reads[i] ?? ''} onChange={e => setRead(st.key, i, e.target.value)} /></td>
+                      <td key={i} className="num">
+                        {Number(reads[i]) > 0
+                          ? <span className="ct-read-done">{reads[i]}<button className="ct-read-x" title="Delete this cycle — you'll re-measure it" onClick={() => clearRead(st.key, i)}>✕</button></span>
+                          : <input className="inp ct-read" type="number" step="0.01" value={reads[i] ?? ''} onChange={e => setRead(st.key, i, e.target.value)} />}
+                      </td>
                     ))}
                     <td className="num mono" style={{ fontWeight: 700 }}>{st.avg || '—'}</td>
                     <td className="num mono" style={{ color: '#16a34a', fontWeight: 600 }}>{st.cap || '—'}</td>
-                    <td>{st.avg <= 0 ? <span className="muted">—</span> : !b ? '—' : within ? <Badge tone="green">In control</Badge> : st.avg > U ? <Badge tone="red">Bottleneck</Badge> : <Badge tone="blue">Fast</Badge>}
-                      {st.nnva ? <button className="btn sm" style={{ marginLeft: 6, color: '#dc2626' }} onClick={() => removeNNVA(st.idx)}>✕</button> : null}
-                    </td>
+                    <td>{st.avg <= 0 ? <span className="muted">—</span> : !b ? '—' : within ? <Badge tone="green">In control</Badge> : st.avg > U ? <Badge tone="red">Bottleneck</Badge> : <Badge tone="blue">Fast</Badge>}</td>
                   </tr>
                 )
               })}

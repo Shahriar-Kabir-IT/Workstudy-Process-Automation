@@ -131,7 +131,7 @@ export default function LineLayout({ style }) {
         onClick={() => clickMachine(m)}
         style={{ border: `2px solid ${isOver ? col : list.length ? col + '99' : picked != null ? '#38709055' : 'var(--line)'}`, borderRadius: 9, background: isOver ? '#f0fbff' : '#fff', minHeight: 58, display: 'flex', flexDirection: 'column', cursor: picked != null ? 'copy' : 'default' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '3px 6px', borderBottom: list.length ? '1px solid #f1f5f9' : 'none' }}>
-          <span className="mono" style={{ fontSize: 10.5, fontWeight: 700, color: '#64748b' }}>M{m}</span>
+          <span className="mono" style={{ fontSize: 10.5, fontWeight: 700, color: '#64748b' }}>W{m}</span>
           {list.length ? <span className="mono" style={{ fontSize: 10, fontWeight: 700, color: col }}>{load.toFixed(2)}</span> : null}
         </div>
         {list.length ? (
@@ -173,7 +173,7 @@ export default function LineLayout({ style }) {
     const left = Math.min(hover.x + 16, (typeof window !== 'undefined' ? window.innerWidth : 1200) - 250)
     return (
       <div style={{ position: 'fixed', left, top: hover.y + 16, zIndex: 90, pointerEvents: 'none', width: 230, background: '#0f172a', color: '#fff', borderRadius: 10, padding: '10px 12px', boxShadow: '0 14px 34px rgba(2,8,23,.4)', fontSize: 12 }}>
-        <div style={{ fontWeight: 800, marginBottom: 7 }}>Machine M{m}</div>
+        <div style={{ fontWeight: 800, marginBottom: 7 }}>W{m}</div>
         {list.length ? list.map(sl => {
           const o = opBySl[sl]
           return (
