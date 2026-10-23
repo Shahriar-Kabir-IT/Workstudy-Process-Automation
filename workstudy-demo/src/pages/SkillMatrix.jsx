@@ -1,113 +1,249 @@
+import { useState, useMemo } from 'react'
 import { ProgressRail } from '../components/Shell.jsx'
 import { Stat, Badge, Note } from '../components/ui.jsx'
-import { MATRIX_MIN_PER_HOUR, operatorEfficiency, gradeFromEff, round } from '../engine/calc.js'
+import { gradeFromEff, round } from '../engine/calc.js'
 import { useStore } from '../store.jsx'
 
-function cellColor(eff) {
-  if (eff == null) return '#f8fafc'
-  if (eff >= 85) return '#dcfce7'
-  if (eff >= 70) return '#ecfccb'
-  if (eff >= 55) return '#fef9c3'
-  return '#fee2e2'
+const avgOf = (reads) => { const r = (reads || []).map(Number).filter(x => x > 0); return r.length ? r.reduce((a, b) => a + b, 0) / r.length : 0 }
+const effColor = (e) => e == null ? '#94a3b8' : e >= 90 ? '#16a34a' : e >= 75 ? '#65a30d' : e >= 60 ? '#d97706' : '#dc2626'
+const gradeTone = (g) => g?.startsWith('A') ? 'green' : g === 'B' ? 'blue' : g === 'C' ? 'amber' : 'red'
+
+// horizontal achievement bars for the worker's top processes
+function EffBars({ rows }) {
+  if (!rows.length) return null
+  const max = Math.max(100, ...rows.map(r => r.avgAch))
+  return (
+    <div className="sm-bars">
+      {rows.map(r => (
+        <div key={r.name} className="sm-bar-row">
+          <div className="sm-bar-lbl" title={r.name}>{r.name}</div>
+          <div className="sm-bar-track">
+            <div className="sm-bar-fill" style={{ width: `${(r.avgAch / max) * 100}%`, background: effColor(r.avgAch) }} />
+          </div>
+          <div className="sm-bar-val" style={{ color: effColor(r.avgAch) }}>{r.avgAch}%</div>
+        </div>
+      ))}
+    </div>
+  )
 }
 
 export default function SkillMatrix({ style }) {
-  const { operatorsFor } = useStore()
-  const ops = operatorsFor(style.factory).slice(0, 12)
-  const styleOps = (style.ops || []).filter(o => o.machine !== 'Manual')
-  const MACHINES = [...new Set(styleOps.map(o => o.machine))].slice(0, 8)
-  const avgSmv = (m) => {
-    const list = styleOps.filter(o => o.machine === m)
-    return list.length ? list.reduce((s, o) => s + o.smv, 0) / list.length : 0.4
-  }
-  const smvByM = Object.fromEntries(MACHINES.map(m => [m, avgSmv(m)]))
+  const { allStyles, operatorsFor } = useStore()
+  const roster = operatorsFor(style.factory)
+  const [q, setQ] = useState('')
+  const [workerId, setWorkerId] = useState('')
 
-  if (!MACHINES.length || !ops.length) {
-    return (
-      <div>
-        <div className="page-head"><div><h1>10 · Skill Matrix</h1><div className="sub">Responsible: WSE</div></div></div>
-        <div style={{ marginBottom: 16 }}><ProgressRail step={style.step} /></div>
-        <Note>{!ops.length
-          ? `No operators for ${style.factory}. Upload the operator list (Dashboard → 👷 Operators).`
-          : 'Build the Operation Breakdown first — the skill matrix is generated from the machines used in this style.'}</Note>
-      </div>
-    )
-  }
+  const matches = useMemo(() => {
+    const s = q.trim().toLowerCase()
+    if (!s) return []
+    return roster.filter(o => String(o.id).toLowerCase().includes(s) || (o.name || '').toLowerCase().includes(s)).slice(0, 8)
+  }, [q, roster])
 
-  // build matrix: operator x machine -> {output, eff} | null
-  const matrix = ops.map((op, i) => {
-    const cells = MACHINES.map((m, j) => {
-      if ((i * 3 + j) % 7 === 0) return null // not skilled on this machine
-      const frac = 0.55 + (((i * 7 + j * 13 + 3) % 9) / 9) * 0.42
-      const cap = Math.floor(MATRIX_MIN_PER_HOUR / smvByM[m])
-      const output = Math.round(cap * frac)
-      const eff = operatorEfficiency(output, smvByM[m])
-      return { output, eff }
-    })
-    const effs = cells.filter(Boolean).map(c => c.eff)
-    const avg = effs.length ? round(effs.reduce((s, v) => s + v, 0) / effs.length, 0) : 0
-    return { op, cells, avg, grade: gradeFromEff(avg), skills: effs.length }
-  })
+  const worker = roster.find(o => String(o.id) === String(workerId))
 
-  const lineAvg = round(matrix.reduce((s, r) => s + r.avg, 0) / matrix.length, 0)
-  const multiSkilled = matrix.filter(r => r.skills >= 4).length
+  // aggregate EVERY cycle-time study (across all styles of this factory) where this worker ran a station
+  const history = useMemo(() => {
+    if (!worker) return []
+    const recs = []
+    for (const st of allStyles) {
+      if (st.factory !== style.factory) continue
+      const ops = st.ops || []
+      const mops = st.machineOps || {}
+      const machineWorker = st.machineWorker || {}
+      const opBySl = Object.fromEntries(ops.map(o => [o.sl, o]))
+      const studies = st.cycleStudies || {}
+      for (const [roundN, study] of Object.entries(studies)) {
+        const obs = study?.obs || {}
+        for (const [key, cell] of Object.entries(obs)) {
+          const m = Number(String(key).replace(/^M/, ''))
+          const assigned = cell?.op || machineWorker[m] || ''
+          if (String(assigned) !== String(worker.id)) continue
+          const avg = round(avgOf(cell?.reads), 3)
+          if (avg <= 0) continue
+          const procs = (mops[m] || []).map(sl => opBySl[sl]).filter(Boolean)
+          if (!procs.length) continue
+          const smv = round(procs.reduce((s, p) => s + (p.smv || 0), 0), 3)
+          const name = procs.map(p => p.name).join(' + ')
+          const machine = [...new Set(procs.map(p => p.machine))].join('/')
+          // achievement = actual output/hr ÷ target output/hr × 100   (target = 60 ÷ SMV)
+          const target = smv > 0 ? Math.floor(60 / smv) : null
+          const actual = Math.floor(60 / avg)
+          const ach = target ? Math.round((actual / target) * 100) : null
+          recs.push({
+            styleNo: st.styleNo, buyer: st.buyer, round: Number(roundN),
+            name, machine, smv, avg, target, actual, ach,
+            cycles: (cell.reads || []).filter(x => Number(x) > 0).length,
+            date: study?.header?.date || '', nnva: procs.some(p => p.nnva),
+          })
+        }
+      }
+    }
+    return recs.sort((a, b) => (b.date || '').localeCompare(a.date || '') || b.round - a.round)
+  }, [worker, allStyles, style.factory])
 
-  // worked example
-  const ex = matrix[0].cells.find(Boolean)
-  const exM = MACHINES[matrix[0].cells.findIndex(Boolean)]
+  // per-process rollup
+  const byProcess = useMemo(() => {
+    const map = new Map()
+    for (const r of history) {
+      const g = map.get(r.name) || { name: r.name, machine: r.machine, times: 0, achs: [], target: r.target, bestCycle: Infinity, lastDate: '', nnva: r.nnva }
+      g.times++
+      if (r.ach != null) g.achs.push(r.ach)
+      g.bestCycle = Math.min(g.bestCycle, r.avg)
+      if ((r.date || '') > g.lastDate) g.lastDate = r.date || ''
+      map.set(r.name, g)
+    }
+    return [...map.values()].map(g => ({
+      ...g,
+      avgAch: g.achs.length ? Math.round(g.achs.reduce((a, b) => a + b, 0) / g.achs.length) : null,
+      bestAch: g.achs.length ? Math.max(...g.achs) : null,
+      bestCycle: g.bestCycle === Infinity ? null : round(g.bestCycle, 3),
+    })).sort((a, b) => (b.avgAch ?? -1) - (a.avgAch ?? -1))
+  }, [history])
+
+  // KPIs
+  const measured = history.filter(r => r.ach != null)
+  const avgAch = measured.length ? Math.round(measured.reduce((s, r) => s + r.ach, 0) / measured.length) : null
+  const best = measured.length ? measured.reduce((a, b) => (b.ach > a.ach ? b : a)) : null
+  const bestProc = byProcess.filter(p => p.avgAch != null)[0] || null
+  const machines = [...new Set(history.map(r => r.machine).filter(Boolean))]
+  const stylesWorked = [...new Set(history.map(r => r.styleNo))]
+  const totalCycles = history.reduce((s, r) => s + r.cycles, 0)
+  const grade = avgAch != null ? gradeFromEff(avgAch) : '—'
 
   return (
     <div>
       <div className="page-head">
-        <div><h1>10 · Skill Matrix</h1><div className="sub">Responsible: WSE · auto-collected operation / machine / efficiency data</div></div>
+        <div><h1>10 · Skill Matrix</h1><div className="sub">Responsible: WSE · search a worker to see their lifetime process history &amp; KPIs</div></div>
       </div>
       <div style={{ marginBottom: 16 }}><ProgressRail step={style.step} /></div>
 
-      <div className="note" style={{ marginBottom: 16 }}>
-        <span>⏱️ <b>Effective working hour = {MATRIX_MIN_PER_HOUR} minutes</b> (85% of 60). All skill-matrix efficiency figures use this.
-          &nbsp;<span className="formula">Efficiency = (Output/hr × SMV) ÷ {MATRIX_MIN_PER_HOUR} × 100</span>
-          {ex ? <> — e.g. {matrix[0].op.name.split(' ')[0]} on {exM}: ({ex.output} × {smvByM[exM].toFixed(2)}) ÷ {MATRIX_MIN_PER_HOUR} = <b>{ex.eff}%</b></> : null}
-        </span>
-      </div>
-
-      <div className="grid cols-4" style={{ marginBottom: 16 }}>
-        <Stat label="Operators" value={ops.length} accent="#2563eb" />
-        <Stat label="Avg Line Skill" value={lineAvg} unit="%" accent={lineAvg >= 75 ? '#16a34a' : '#d97706'} foot="@ 51-min hour" />
-        <Stat label="Multi-skilled (4+)" value={multiSkilled} foot="machines mastered" accent="#0891b2" />
-        <Stat label="Machine Types" value={MACHINES.length} />
-      </div>
-
-      <div className="card">
-        <div className="card-head"><h3>Operator × Machine Efficiency</h3><span className="hint">cell = efficiency % · blank = not skilled</span></div>
-        <div className="table-wrap" style={{ border: 'none', borderRadius: 0 }}>
-          <table>
-            <thead>
-              <tr>
-                <th>Operator</th><th>ID</th>
-                {MACHINES.map(m => <th key={m} className="num">{m}</th>)}
-                <th className="num">Avg</th><th>Grade</th>
-              </tr>
-            </thead>
-            <tbody>
-              {matrix.map(r => (
-                <tr key={r.op.id}>
-                  <td><b>{r.op.name}</b></td>
-                  <td className="mono muted">{r.op.id}</td>
-                  {r.cells.map((c, j) => (
-                    <td key={j} className="num mono" style={{ background: cellColor(c ? c.eff : null), fontWeight: c ? 600 : 400 }}>
-                      {c ? c.eff + '%' : '—'}
-                    </td>
-                  ))}
-                  <td className="num mono"><b>{r.avg}%</b></td>
-                  <td><Badge tone={r.grade.startsWith('A') ? 'green' : r.grade === 'B' ? 'blue' : r.grade === 'C' ? 'amber' : 'red'}>{r.grade}</Badge></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {/* search */}
+      <div className="card card-pad" style={{ marginBottom: 16 }}>
+        <div className="field" style={{ maxWidth: 420 }}>
+          <label>🔎 Search worker (ID or name) · {roster.length} on {style.factory}</label>
+          <input className="inp" value={q} placeholder="e.g. 10231 or Rahim" onChange={e => setQ(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter' && matches[0]) { setWorkerId(matches[0].id); setQ('') } }} />
         </div>
+        {matches.length ? (
+          <div className="flex wrap" style={{ gap: 8, marginTop: 10 }}>
+            {matches.map(o => (
+              <button key={o.id} className="btn sm" onClick={() => { setWorkerId(o.id); setQ('') }}
+                style={{ borderColor: String(o.id) === String(workerId) ? '#2563eb' : undefined }}>
+                <b className="mono">{o.id}</b> · {o.name} <span className="muted">· {o.machine || '—'} · L{o.line}</span>
+              </button>
+            ))}
+          </div>
+        ) : null}
       </div>
 
-      <Note tone="blue" >The system auto-collects each operator's cycle-time results over time to keep this matrix current — filter by date range and print on request.</Note>
+      {!worker ? (
+        <Note tone="blue">Search a worker by their <b>ID or name</b> above. The matrix pulls every cycle-time study they appear in — across all styles of {style.factory} — and ranks their processes by achievement vs target output.</Note>
+      ) : (
+        <>
+          {/* worker identity */}
+          <div className="card card-pad" style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+            <div className="sm-avatar">{(worker.name || '?').slice(0, 1)}</div>
+            <div style={{ flex: 1, minWidth: 180 }}>
+              <div style={{ fontSize: 18, fontWeight: 700 }}>{worker.name}</div>
+              <div className="muted" style={{ fontSize: 12.5 }}>ID <b className="mono">{worker.id}</b> · {worker.machine || '—'} · Line {worker.line} · {worker.factory}</div>
+            </div>
+            <Badge tone={gradeTone(grade)}>Grade {grade}</Badge>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: 26, fontWeight: 800, color: effColor(avgAch) }}>{avgAch != null ? avgAch + '%' : '—'}</div>
+              <div className="ct-l">avg achievement</div>
+            </div>
+          </div>
+
+          {!history.length ? (
+            <Note>No cycle-time studies recorded for <b>{worker.name}</b> yet. Their KPIs appear here once they are timed on a station (step 9 · Cycle Time).</Note>
+          ) : (
+            <>
+              <div className="grid cols-4" style={{ marginBottom: 16 }}>
+                <Stat label="Processes done" value={byProcess.length} foot={`${history.length} studies`} accent="#2563eb" />
+                <Stat label="Machines operated" value={machines.length} foot={machines.slice(0, 4).join(', ')} accent="#0891b2" />
+                <Stat label="Styles worked" value={stylesWorked.length} foot={`${totalCycles} cycles timed`} accent="#7c3aed" />
+                <Stat label="Best achievement" value={best ? best.ach : '—'} unit={best ? '%' : ''} foot={best ? best.name.slice(0, 22) : ''} accent="#16a34a" />
+              </div>
+
+              {/* most efficient process hero */}
+              {bestProc ? (
+                <div className="card card-pad sm-hero" style={{ marginBottom: 16 }}>
+                  <div>
+                    <div className="ct-l">⭐ Most efficient process</div>
+                    <div style={{ fontSize: 17, fontWeight: 700, margin: '2px 0' }}>{bestProc.name}</div>
+                    <div className="muted" style={{ fontSize: 12.5 }}>{bestProc.machine} · best cycle <b>{bestProc.bestCycle} min</b> · target <b>{bestProc.target ?? '—'}</b> pcs/hr · done {bestProc.times}×</div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: 30, fontWeight: 800, color: effColor(bestProc.avgAch) }}>{bestProc.avgAch}%</div>
+                    <div className="ct-l">avg · peak {bestProc.bestAch}%</div>
+                  </div>
+                </div>
+              ) : null}
+
+              <div className="sm-split">
+                {/* per-process table */}
+                <div className="card">
+                  <div className="card-head"><h3>Processes performed</h3><span className="hint">ranked by avg achievement · actual ÷ target output</span></div>
+                  <div className="table-wrap" style={{ border: 'none', borderRadius: 0, maxHeight: 420 }}>
+                    <table>
+                      <thead><tr><th>Process</th><th>M/c</th><th className="num">Times</th><th className="num">Best cyc</th><th className="num">Target/hr</th><th className="num">Avg Ach</th><th className="num">Peak</th><th>Last</th></tr></thead>
+                      <tbody>
+                        {byProcess.map(p => (
+                          <tr key={p.name}>
+                            <td><b style={{ fontSize: 11.5 }}>{p.name}</b> {p.nnva ? <Badge tone="violet">NNVA</Badge> : null}</td>
+                            <td><Badge tone="blue">{p.machine}</Badge></td>
+                            <td className="num mono">{p.times}</td>
+                            <td className="num mono">{p.bestCycle ?? '—'}</td>
+                            <td className="num mono muted">{p.target ?? '—'}</td>
+                            <td className="num mono" style={{ fontWeight: 700, color: effColor(p.avgAch) }}>{p.avgAch != null ? p.avgAch + '%' : '—'}</td>
+                            <td className="num mono" style={{ color: effColor(p.bestAch) }}>{p.bestAch != null ? p.bestAch + '%' : '—'}</td>
+                            <td className="muted mono" style={{ fontSize: 11 }}>{p.lastDate || '—'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* achievement bars */}
+                <div className="card card-pad">
+                  <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10 }}>Achievement by process</div>
+                  <EffBars rows={byProcess.filter(p => p.avgAch != null).slice(0, 10)} />
+                </div>
+              </div>
+
+              {/* history log */}
+              <div className="card mt">
+                <div className="card-head"><h3>Study history</h3><span className="hint">{history.length} records · newest first</span></div>
+                <div className="table-wrap" style={{ border: 'none', borderRadius: 0, maxHeight: 360 }}>
+                  <table>
+                    <thead><tr><th>Date</th><th>Style</th><th>Buyer</th><th className="num">Rnd</th><th>Process</th><th>M/c</th><th className="num">SMV</th><th className="num">Avg min</th><th className="num">Target/hr</th><th className="num">Actual/hr</th><th className="num">Ach</th></tr></thead>
+                    <tbody>
+                      {history.map((r, i) => (
+                        <tr key={i}>
+                          <td className="mono muted" style={{ fontSize: 11, whiteSpace: 'nowrap' }}>{r.date || '—'}</td>
+                          <td className="mono"><b>{r.styleNo}</b></td>
+                          <td className="muted" style={{ fontSize: 11.5 }}>{r.buyer || '—'}</td>
+                          <td className="num mono">{r.round}</td>
+                          <td><span style={{ fontSize: 11.5 }}>{r.name}</span></td>
+                          <td><Badge tone="blue">{r.machine}</Badge></td>
+                          <td className="num mono">{r.smv || '—'}</td>
+                          <td className="num mono">{r.avg}</td>
+                          <td className="num mono muted">{r.target ?? '—'}</td>
+                          <td className="num mono" style={{ color: '#16a34a' }}>{r.actual}</td>
+                          <td className="num mono" style={{ fontWeight: 700, color: effColor(r.ach) }}>{r.ach != null ? r.ach + '%' : '—'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <Note tone="blue">Achievement = actual output/hr (60 ÷ observed cycle) ÷ target output/hr (60 ÷ SMV) × 100. 100% = on standard. When Actual/hr ≫ Target/hr the cycle readings are likely placeholder data, not real timings. NNVA processes carry no SMV, so they show in history but not in the ranking.</Note>
+            </>
+          )}
+        </>
+      )}
     </div>
   )
 }

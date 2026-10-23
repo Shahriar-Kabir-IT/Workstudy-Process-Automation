@@ -317,3 +317,21 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 .ct-read-done { display: inline-flex; align-items: center; gap: 3px; justify-content: flex-end; width: 50px; font-variant-numeric: tabular-nums; font-family: var(--mono, monospace); font-size: 11px; font-weight: 600; color: #16a34a; }
 .ct-read-x { border: none; background: none; color: #cbd5e1; cursor: pointer; font-size: 11px; line-height: 1; padding: 0; }
 .ct-read-x:hover { color: #dc2626; }
+
+/* ---------------- skill matrix (worker lookup) ---------------- */
+.sm-avatar { width: 46px; height: 46px; border-radius: 50%; background: linear-gradient(135deg,#2563eb,#0891b2); color: #fff; font-weight: 800; font-size: 20px; display: flex; align-items: center; justify-content: center; }
+.sm-hero { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; background: linear-gradient(180deg,#f0f7ff,#fff); border-color: #bfdbfe; }
+.sm-split { display: grid; grid-template-columns: 1.55fr 1fr; gap: 14px; align-items: start; }
+@media (max-width: 900px) { .sm-split { grid-template-columns: 1fr; } }
+.sm-bars { display: flex; flex-direction: column; gap: 9px; }
+.sm-bar-row { display: grid; grid-template-columns: 120px 1fr 42px; align-items: center; gap: 8px; }
+.sm-bar-lbl { font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #475569; }
+.sm-bar-track { height: 14px; background: #f1f5f9; border-radius: 7px; overflow: hidden; }
+.sm-bar-fill { height: 100%; border-radius: 7px; transition: width .3s; min-width: 2px; }
+.sm-bar-val { font-size: 11px; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
+
+/* ---------------- OB quick-add (NNVA / quality) ---------------- */
+.ob-quickadd { display: flex; flex-wrap: wrap; gap: 14px; align-items: end; padding: 12px 14px; background: #faf7ff; border: 1px solid #e9d5ff; border-radius: 10px; }
+.ob-quickadd-sep { display: flex; align-items: center; text-align: center; color: var(--muted); font-size: 11.5px; margin: 14px 0 10px; }
+.ob-quickadd-sep::before, .ob-quickadd-sep::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+.ob-quickadd-sep span { padding: 0 12px; }
