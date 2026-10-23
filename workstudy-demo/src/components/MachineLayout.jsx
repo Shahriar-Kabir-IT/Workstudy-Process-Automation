@@ -25,7 +25,7 @@ export function MachineLayoutView({ style, maxHeight = 480 }) {
     return (
       <div key={m} style={{ border: `1.5px solid ${list.length ? col + '99' : 'var(--line)'}`, borderRadius: 8, background: '#fff', minHeight: 40 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 6px', borderBottom: list.length ? '1px solid #f1f5f9' : 'none' }}>
-          <span className="mono" style={{ fontSize: 10, fontWeight: 700, color: '#64748b' }}>M{m}</span>
+          <span className="mono" style={{ fontSize: 10, fontWeight: 700, color: '#64748b' }}>W{m}</span>
           {list.length ? <span className="mono" style={{ fontSize: 9.5, fontWeight: 700, color: col }}>{load.toFixed(2)}</span> : null}
         </div>
         {list.length ? (

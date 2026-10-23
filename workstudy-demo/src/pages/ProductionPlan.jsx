@@ -5,7 +5,8 @@ import { ProgressRail } from '../components/Shell.jsx'
 import { Badge } from '../components/ui.jsx'
 import { computeOB, round } from '../engine/calc.js'
 
-const iso = (d) => d.toISOString().slice(0, 10)
+// local YYYY-MM-DD (NOT toISOString — that shifts to UTC and moves the date back a day in +TZ)
+const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 const fmtDay = (s) => new Date(s + 'T00:00').toLocaleDateString(undefined, { day: '2-digit', month: 'short' })
 const wkday = (s) => new Date(s + 'T00:00').toLocaleDateString(undefined, { weekday: 'short' })
 const isFriday = (s) => new Date(s + 'T00:00').getDay() === 5
@@ -51,12 +52,14 @@ export default function ProductionPlan({ style }) {
   const tSMV = style.ops?.length ? computeOB(style.ops, style.manpower).totalSMV : (style.smv || 0)
   const pp = style.productionPlan || {}
   const [workingHours, setWorkingHours] = useState(pp.workingHours || 10)
+  const [manpower, setManpower] = useState(pp.manpower != null ? pp.manpower : (style.manpower || 0))
   const [startDate, setStartDate] = useState(pp.startDate || iso(new Date()))
   const [numDays, setNumDays] = useState(pp.numDays || 14)
   const [entries, setEntries] = useState(pp.entries || {})
 
-  const persist = (patch) => updateStyle(style.id, { productionPlan: { workingHours, startDate, numDays, entries, ...patch } })
+  const persist = (patch) => updateStyle(style.id, { productionPlan: { workingHours, manpower, startDate, numDays, entries, ...patch } })
   const setHours = (v) => { const n = Number(v) || 0; setWorkingHours(n); persist({ workingHours: n }) }
+  const setMP = (v) => { const n = Number(v) || 0; setManpower(n); persist({ manpower: n }) }
   const setStart = (v) => { setStartDate(v); persist({ startDate: v }) }
   const setN = (v) => { const n = Math.max(1, Math.min(60, Number(v) || 1)); setNumDays(n); persist({ numDays: n }) }
   const setEntry = (date, field, val) => {
@@ -69,7 +72,7 @@ export default function ProductionPlan({ style }) {
   const d0 = new Date(startDate + 'T00:00')
   for (let i = 0; i < numDays; i++) { const d = new Date(d0); d.setDate(d0.getDate() + i); dates.push(iso(d)) }
 
-  const availMin = style.manpower * workingHours * 60
+  const availMin = manpower * workingHours * 60
   const eff = (out) => (availMin > 0 && out > 0 ? round((out * tSMV) / availMin * 100, 1) : 0)
 
   let pc = 0, ac = 0
@@ -104,7 +107,9 @@ export default function ProductionPlan({ style }) {
         <Info k="Product" v={style.item} />
         <Info k="Ord. Qty" v={(style.order || 0).toLocaleString()} />
         <Info k="S.M.V." v={tSMV} />
-        <Info k="Manpower" v={style.manpower} />
+        <div className="pp-info"><span>Manpower</span>
+          <input className="inp" type="number" min="0" value={manpower} onChange={e => setMP(e.target.value)} style={{ height: 28, width: 70, padding: '2px 6px' }} />
+        </div>
         <Info k="Line" v={style.layoutLine?.name || style.line || '—'} />
         <div className="pp-info"><span>Working Hours</span>
           <input className="inp" type="number" min="1" max="24" value={workingHours} onChange={e => setHours(e.target.value)} style={{ height: 28, width: 64, padding: '2px 6px' }} />

@@ -9,6 +9,7 @@ export const MACHINE_LEGEND = CONFIG.machineLegend
 export const OB_LIBRARY = CONFIG.obLibrary
 export const OB_FIELDS = CONFIG.fieldOptions
 export const CATEGORIES = CONFIG.categories
+export const NNVA_LIBRARY = CONFIG.nnvaLibrary || []
 export const STEPS = CONFIG.steps
 export const USERS = CONFIG.users
 export const STYLES = []   // no seeded styles — created at runtime

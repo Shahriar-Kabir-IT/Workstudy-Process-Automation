@@ -1,9 +1,10 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useStore } from '../store.jsx'
 import { ProgressRail } from '../components/Shell.jsx'
 import { Stat, Badge, Note } from '../components/ui.jsx'
 import { computeOB } from '../engine/calc.js'
-import { can } from '../data/seed.js'
+import { can, NNVA_LIBRARY } from '../data/seed.js'
 import ObLibraryPicker from '../components/ObLibraryPicker.jsx'
 
 export default function OperationBreakdown({ style }) {
@@ -23,6 +24,8 @@ export default function OperationBreakdown({ style }) {
     push({ name: row.name, machine: m, smv: row.smv, aml: row.aml || 1, section: row.section, manual: m === 'Manual' || m === 'HP', fromLibrary: true })
   }
   const addQC = () => push({ name: 'Quality Inspection', machine: 'QC', smv: 0, aml: 1, section: 'QUALITY', qc: true })
+  const addNNVA = (name) => { if (name) push({ name, machine: 'HP', smv: 0, aml: 1, section: 'NNVA', nnva: true }) }
+  const [nnvaSel, setNnvaSel] = useState('')
   const removeOp = (sl) => updateStyle(style.id, { ops: ops.filter(o => o.sl !== sl).map((o, i) => ({ ...o, sl: i + 1 })) })
   const submit = () => { updateStyle(style.id, { step: Math.max(style.step, 4), status: 'OB Approval' }); nav(`/style/${style.id}/approval`) }
   const createNewOB = () => updateStyle(style.id, { obApproved: false, approvedBy: null, obVersion: (style.obVersion || 1) + 1, step: 3, status: 'Operation Breakdown', layoutVerified: false, changeRequest: null, obRejected: null })
@@ -85,7 +88,13 @@ export default function OperationBreakdown({ style }) {
       {!locked && canPrepare ? (
         <div className="card mt">
           <div className="card-head"><h3>Add Operation</h3>
-            <button className="btn sm" onClick={addQC} title="Add a Quality Inspection process (no SMV)">🔍 + Quality Inspection</button>
+            <span className="flex" style={{ gap: 8 }}>
+              <select className="inp" value={nnvaSel} onChange={e => { addNNVA(e.target.value); setNnvaSel('') }} style={{ height: 30, fontSize: 12, maxWidth: 220 }} title="Add a Necessary Non-Value-Added process">
+                <option value="">+ NNVA process…</option>
+                {NNVA_LIBRARY.map(x => <option key={x} value={x}>{x}</option>)}
+              </select>
+              <button className="btn sm" onClick={addQC} title="Add a Quality Inspection process (no SMV)">🔍 + Quality Inspection</button>
+            </span>
           </div>
           <div className="card-pad"><ObLibraryPicker onAdd={addFromLibrary} existing={ops} /></div>
         </div>

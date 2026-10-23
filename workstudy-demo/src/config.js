@@ -29,6 +29,21 @@ export const DEFAULTS = {
     workingHours: 10,           // hours/day
   },
 
+  // NNVA (Necessary Non-Value-Added) process library — selectable when building the OB.
+  // No SMV (they take time but add no standard value); they flow into layout & cycle time.
+  nnvaLibrary: [
+    'ASSEMBLY (FRONT & BACK PART MATCH)',
+    'SINGLE FLY FUSING SPREADING',
+    'BODY TURNOVER',
+    'WAIST LOOP & BELT MATCH TACK TO BODY',
+    'THIGH POCKET & FLAP ASSEMBLY',
+    'BODY TURN OVER BEFORE INSEAM TOP STITCH',
+    'BODY TURN OVER BEFORE FRONT TO BACK RISE JOIN OL',
+    'BODY TURN OVER BEFORE HEM',
+    'COLLAR ASSEMBLY',
+    'SLEEVE & CUFF ASSEMBLY',
+  ],
+
   // Product categories — mirror the OB Library (Excel). Loaded live from the API at runtime;
   // this list is the offline fallback.
   categories: ['MENS', 'WOMENS', 'BOYS', 'KIDS', 'OVERSIZE'],
