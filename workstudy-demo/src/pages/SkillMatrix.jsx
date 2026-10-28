@@ -4,23 +4,24 @@ import { Stat, Badge, Note } from '../components/ui.jsx'
 import { gradeFromEff, round } from '../engine/calc.js'
 import { useStore } from '../store.jsx'
 
+const ALLOWANCE = 1.15   // 15% allowance added to observed average cycle time
 const avgOf = (reads) => { const r = (reads || []).map(Number).filter(x => x > 0); return r.length ? r.reduce((a, b) => a + b, 0) / r.length : 0 }
 const effColor = (e) => e == null ? '#94a3b8' : e >= 90 ? '#16a34a' : e >= 75 ? '#65a30d' : e >= 60 ? '#d97706' : '#dc2626'
 const gradeTone = (g) => g?.startsWith('A') ? 'green' : g === 'B' ? 'blue' : g === 'C' ? 'amber' : 'red'
 
-// horizontal achievement bars for the worker's top processes
+// horizontal efficiency bars for the worker's top processes
 function EffBars({ rows }) {
   if (!rows.length) return null
-  const max = Math.max(100, ...rows.map(r => r.avgAch))
+  const max = Math.max(100, ...rows.map(r => r.avgEff))
   return (
     <div className="sm-bars">
       {rows.map(r => (
         <div key={r.name} className="sm-bar-row">
           <div className="sm-bar-lbl" title={r.name}>{r.name}</div>
           <div className="sm-bar-track">
-            <div className="sm-bar-fill" style={{ width: `${(r.avgAch / max) * 100}%`, background: effColor(r.avgAch) }} />
+            <div className="sm-bar-fill" style={{ width: `${(r.avgEff / max) * 100}%`, background: effColor(r.avgEff) }} />
           </div>
-          <div className="sm-bar-val" style={{ color: effColor(r.avgAch) }}>{r.avgAch}%</div>
+          <div className="sm-bar-val" style={{ color: effColor(r.avgEff) }}>{r.avgEff}%</div>
         </div>
       ))}
     </div>
@@ -58,20 +59,19 @@ export default function SkillMatrix({ style }) {
           const m = Number(String(key).replace(/^M/, ''))
           const assigned = cell?.op || machineWorker[m] || ''
           if (String(assigned) !== String(worker.id)) continue
-          const avg = round(avgOf(cell?.reads), 3)
-          if (avg <= 0) continue
+          const avgRaw = avgOf(cell?.reads)
+          if (avgRaw <= 0) continue
+          const avg = round(avgRaw * ALLOWANCE, 3)   // average cycle time incl. 15% allowance
           const procs = (mops[m] || []).map(sl => opBySl[sl]).filter(Boolean)
           if (!procs.length) continue
           const smv = round(procs.reduce((s, p) => s + (p.smv || 0), 0), 3)
           const name = procs.map(p => p.name).join(' + ')
           const machine = [...new Set(procs.map(p => p.machine))].join('/')
-          // achievement = actual output/hr ÷ target output/hr × 100   (target = 60 ÷ SMV)
-          const target = smv > 0 ? Math.floor(60 / smv) : null
-          const actual = Math.floor(60 / avg)
-          const ach = target ? Math.round((actual / target) * 100) : null
+          // efficiency = SMV ÷ average cycle time (incl. 15% allowance) × 100
+          const eff = smv > 0 ? Math.round((smv / avg) * 100) : null
           recs.push({
             styleNo: st.styleNo, buyer: st.buyer, round: Number(roundN),
-            name, machine, smv, avg, target, actual, ach,
+            name, machine, smv, avg, eff,
             cycles: (cell.reads || []).filter(x => Number(x) > 0).length,
             date: study?.header?.date || '', nnva: procs.some(p => p.nnva),
           })
@@ -85,30 +85,30 @@ export default function SkillMatrix({ style }) {
   const byProcess = useMemo(() => {
     const map = new Map()
     for (const r of history) {
-      const g = map.get(r.name) || { name: r.name, machine: r.machine, times: 0, achs: [], target: r.target, bestCycle: Infinity, lastDate: '', nnva: r.nnva }
+      const g = map.get(r.name) || { name: r.name, machine: r.machine, times: 0, effs: [], smv: r.smv, bestCycle: Infinity, lastDate: '', nnva: r.nnva }
       g.times++
-      if (r.ach != null) g.achs.push(r.ach)
+      if (r.eff != null) g.effs.push(r.eff)
       g.bestCycle = Math.min(g.bestCycle, r.avg)
       if ((r.date || '') > g.lastDate) g.lastDate = r.date || ''
       map.set(r.name, g)
     }
     return [...map.values()].map(g => ({
       ...g,
-      avgAch: g.achs.length ? Math.round(g.achs.reduce((a, b) => a + b, 0) / g.achs.length) : null,
-      bestAch: g.achs.length ? Math.max(...g.achs) : null,
+      avgEff: g.effs.length ? Math.round(g.effs.reduce((a, b) => a + b, 0) / g.effs.length) : null,
+      bestEff: g.effs.length ? Math.max(...g.effs) : null,
       bestCycle: g.bestCycle === Infinity ? null : round(g.bestCycle, 3),
-    })).sort((a, b) => (b.avgAch ?? -1) - (a.avgAch ?? -1))
+    })).sort((a, b) => (b.avgEff ?? -1) - (a.avgEff ?? -1))
   }, [history])
 
   // KPIs
-  const measured = history.filter(r => r.ach != null)
-  const avgAch = measured.length ? Math.round(measured.reduce((s, r) => s + r.ach, 0) / measured.length) : null
-  const best = measured.length ? measured.reduce((a, b) => (b.ach > a.ach ? b : a)) : null
-  const bestProc = byProcess.filter(p => p.avgAch != null)[0] || null
+  const measured = history.filter(r => r.eff != null)
+  const avgEff = measured.length ? Math.round(measured.reduce((s, r) => s + r.eff, 0) / measured.length) : null
+  const best = measured.length ? measured.reduce((a, b) => (b.eff > a.eff ? b : a)) : null
+  const bestProc = byProcess.filter(p => p.avgEff != null)[0] || null
   const machines = [...new Set(history.map(r => r.machine).filter(Boolean))]
   const stylesWorked = [...new Set(history.map(r => r.styleNo))]
   const totalCycles = history.reduce((s, r) => s + r.cycles, 0)
-  const grade = avgAch != null ? gradeFromEff(avgAch) : '—'
+  const grade = avgEff != null ? gradeFromEff(avgEff) : '—'
 
   return (
     <div>
@@ -137,7 +137,7 @@ export default function SkillMatrix({ style }) {
       </div>
 
       {!worker ? (
-        <Note tone="blue">Search a worker by their <b>ID or name</b> above. The matrix pulls every cycle-time study they appear in — across all styles of {style.factory} — and ranks their processes by achievement vs target output.</Note>
+        <Note tone="blue">Search a worker by their <b>ID or name</b> above. The matrix pulls every cycle-time study they appear in — across all styles of {style.factory} — and ranks their processes by efficiency.</Note>
       ) : (
         <>
           {/* worker identity */}
@@ -149,8 +149,8 @@ export default function SkillMatrix({ style }) {
             </div>
             <Badge tone={gradeTone(grade)}>Grade {grade}</Badge>
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: 26, fontWeight: 800, color: effColor(avgAch) }}>{avgAch != null ? avgAch + '%' : '—'}</div>
-              <div className="ct-l">avg achievement</div>
+              <div style={{ fontSize: 26, fontWeight: 800, color: effColor(avgEff) }}>{avgEff != null ? avgEff + '%' : '—'}</div>
+              <div className="ct-l">avg efficiency</div>
             </div>
           </div>
 
@@ -162,7 +162,7 @@ export default function SkillMatrix({ style }) {
                 <Stat label="Processes done" value={byProcess.length} foot={`${history.length} studies`} accent="#2563eb" />
                 <Stat label="Machines operated" value={machines.length} foot={machines.slice(0, 4).join(', ')} accent="#0891b2" />
                 <Stat label="Styles worked" value={stylesWorked.length} foot={`${totalCycles} cycles timed`} accent="#7c3aed" />
-                <Stat label="Best achievement" value={best ? best.ach : '—'} unit={best ? '%' : ''} foot={best ? best.name.slice(0, 22) : ''} accent="#16a34a" />
+                <Stat label="Best efficiency" value={best ? best.eff : '—'} unit={best ? '%' : ''} foot={best ? best.name.slice(0, 22) : ''} accent="#16a34a" />
               </div>
 
               {/* most efficient process hero */}
@@ -171,11 +171,11 @@ export default function SkillMatrix({ style }) {
                   <div>
                     <div className="ct-l">⭐ Most efficient process</div>
                     <div style={{ fontSize: 17, fontWeight: 700, margin: '2px 0' }}>{bestProc.name}</div>
-                    <div className="muted" style={{ fontSize: 12.5 }}>{bestProc.machine} · best cycle <b>{bestProc.bestCycle} min</b> · target <b>{bestProc.target ?? '—'}</b> pcs/hr · done {bestProc.times}×</div>
+                    <div className="muted" style={{ fontSize: 12.5 }}>{bestProc.machine} · SMV <b>{bestProc.smv ?? '—'}</b> · best cycle <b>{bestProc.bestCycle} min</b> · done {bestProc.times}×</div>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: 30, fontWeight: 800, color: effColor(bestProc.avgAch) }}>{bestProc.avgAch}%</div>
-                    <div className="ct-l">avg · peak {bestProc.bestAch}%</div>
+                    <div style={{ fontSize: 30, fontWeight: 800, color: effColor(bestProc.avgEff) }}>{bestProc.avgEff}%</div>
+                    <div className="ct-l">avg · peak {bestProc.bestEff}%</div>
                   </div>
                 </div>
               ) : null}
@@ -183,20 +183,20 @@ export default function SkillMatrix({ style }) {
               <div className="sm-split">
                 {/* per-process table */}
                 <div className="card">
-                  <div className="card-head"><h3>Processes performed</h3><span className="hint">ranked by avg achievement · actual ÷ target output</span></div>
+                  <div className="card-head"><h3>Processes performed</h3><span className="hint">ranked by avg efficiency · SMV ÷ avg cycle time</span></div>
                   <div className="table-wrap" style={{ border: 'none', borderRadius: 0, maxHeight: 420 }}>
                     <table>
-                      <thead><tr><th>Process</th><th>M/c</th><th className="num">Times</th><th className="num">Best cyc</th><th className="num">Target/hr</th><th className="num">Avg Ach</th><th className="num">Peak</th><th>Last</th></tr></thead>
+                      <thead><tr><th>Process</th><th>M/c</th><th className="num">Times</th><th className="num">SMV</th><th className="num">Best cyc</th><th className="num">Avg Eff</th><th className="num">Peak</th><th>Last</th></tr></thead>
                       <tbody>
                         {byProcess.map(p => (
                           <tr key={p.name}>
                             <td><b style={{ fontSize: 11.5 }}>{p.name}</b> {p.nnva ? <Badge tone="violet">NNVA</Badge> : null}</td>
                             <td><Badge tone="blue">{p.machine}</Badge></td>
                             <td className="num mono">{p.times}</td>
+                            <td className="num mono muted">{p.smv ?? '—'}</td>
                             <td className="num mono">{p.bestCycle ?? '—'}</td>
-                            <td className="num mono muted">{p.target ?? '—'}</td>
-                            <td className="num mono" style={{ fontWeight: 700, color: effColor(p.avgAch) }}>{p.avgAch != null ? p.avgAch + '%' : '—'}</td>
-                            <td className="num mono" style={{ color: effColor(p.bestAch) }}>{p.bestAch != null ? p.bestAch + '%' : '—'}</td>
+                            <td className="num mono" style={{ fontWeight: 700, color: effColor(p.avgEff) }}>{p.avgEff != null ? p.avgEff + '%' : '—'}</td>
+                            <td className="num mono" style={{ color: effColor(p.bestEff) }}>{p.bestEff != null ? p.bestEff + '%' : '—'}</td>
                             <td className="muted mono" style={{ fontSize: 11 }}>{p.lastDate || '—'}</td>
                           </tr>
                         ))}
@@ -205,19 +205,19 @@ export default function SkillMatrix({ style }) {
                   </div>
                 </div>
 
-                {/* achievement bars */}
+                {/* efficiency bars */}
                 <div className="card card-pad">
-                  <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10 }}>Achievement by process</div>
-                  <EffBars rows={byProcess.filter(p => p.avgAch != null).slice(0, 10)} />
+                  <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10 }}>Efficiency by process</div>
+                  <EffBars rows={byProcess.filter(p => p.avgEff != null).slice(0, 10)} />
                 </div>
               </div>
 
               {/* history log */}
               <div className="card mt">
-                <div className="card-head"><h3>Study history</h3><span className="hint">{history.length} records · newest first</span></div>
+                <div className="card-head"><h3>Study history</h3><span className="hint">{history.length} records · newest first · cycle time incl. 15% allowance</span></div>
                 <div className="table-wrap" style={{ border: 'none', borderRadius: 0, maxHeight: 360 }}>
                   <table>
-                    <thead><tr><th>Date</th><th>Style</th><th>Buyer</th><th className="num">Rnd</th><th>Process</th><th>M/c</th><th className="num">SMV</th><th className="num">Avg min</th><th className="num">Target/hr</th><th className="num">Actual/hr</th><th className="num">Ach</th></tr></thead>
+                    <thead><tr><th>Date</th><th>Style</th><th>Buyer</th><th className="num">Rnd</th><th>Process</th><th>M/c</th><th className="num">SMV</th><th className="num">Avg cyc (+15%)</th><th className="num">Cap/hr</th><th className="num">Eff</th></tr></thead>
                     <tbody>
                       {history.map((r, i) => (
                         <tr key={i}>
@@ -229,9 +229,8 @@ export default function SkillMatrix({ style }) {
                           <td><Badge tone="blue">{r.machine}</Badge></td>
                           <td className="num mono">{r.smv || '—'}</td>
                           <td className="num mono">{r.avg}</td>
-                          <td className="num mono muted">{r.target ?? '—'}</td>
-                          <td className="num mono" style={{ color: '#16a34a' }}>{r.actual}</td>
-                          <td className="num mono" style={{ fontWeight: 700, color: effColor(r.ach) }}>{r.ach != null ? r.ach + '%' : '—'}</td>
+                          <td className="num mono" style={{ color: '#16a34a' }}>{r.avg > 0 ? Math.floor(60 / r.avg) : '—'}</td>
+                          <td className="num mono" style={{ fontWeight: 700, color: effColor(r.eff) }}>{r.eff != null ? r.eff + '%' : '—'}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -239,7 +238,7 @@ export default function SkillMatrix({ style }) {
                 </div>
               </div>
 
-              <Note tone="blue">Achievement = actual output/hr (60 ÷ observed cycle) ÷ target output/hr (60 ÷ SMV) × 100. 100% = on standard. When Actual/hr ≫ Target/hr the cycle readings are likely placeholder data, not real timings. NNVA processes carry no SMV, so they show in history but not in the ranking.</Note>
+              <Note tone="blue">Efficiency = SMV ÷ average cycle time × 100, where the average cycle time already includes a <b>15% allowance</b> (observed average × 1.15). 100% = on standard. NNVA processes carry no SMV, so they show in history but not in the ranking.</Note>
             </>
           )}
         </>

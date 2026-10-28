@@ -11,35 +11,43 @@ const fmtDay = (s) => new Date(s + 'T00:00').toLocaleDateString(undefined, { day
 const wkday = (s) => new Date(s + 'T00:00').toLocaleDateString(undefined, { weekday: 'short' })
 const isFriday = (s) => new Date(s + 'T00:00').getDay() === 5
 
-// compact combined chart: daily output bars + cumulative line (single scale)
-function PlanChart({ rows, color, title, max }) {
-  const W = 330, H = 160, pad = { l: 36, r: 10, t: 14, b: 22 }
+// daily efficiency chart: planned vs actual efficiency lines + 100% target reference
+function EffChart({ rows }) {
+  const W = 340, H = 190, pad = { l: 34, r: 12, t: 26, b: 24 }
   const iw = W - pad.l - pad.r, ih = H - pad.t - pad.b
   const n = rows.length || 1
-  const bw = iw / n
+  const cw = iw / n
+  const allEff = rows.flatMap(r => [r.planEff, r.actEff]).filter(v => v > 0)
+  const max = Math.max(100, ...allEff) * 1.08
+  const cx = (i) => pad.l + i * cw + cw / 2
   const y = (v) => pad.t + ih - (max > 0 ? (v / max) * ih : 0)
-  const linePts = rows.map((r, i) => `${(pad.l + i * bw + bw / 2).toFixed(1)},${y(r.cum).toFixed(1)}`).join(' ')
+  const step = Math.max(1, Math.ceil(n / 7))
   const ticks = [0, 0.5, 1].map(f => ({ v: Math.round(max * f), yy: y(max * f) }))
+  const lineFor = (key) => rows.map((r, i) => r[key] > 0 ? `${cx(i).toFixed(1)},${y(r[key]).toFixed(1)}` : null).filter(Boolean).join(' ')
+  const series = [{ key: 'planEff', color: '#2563eb', label: 'Plan Eff' }, { key: 'actEff', color: '#16a34a', label: 'Actual Eff' }]
   return (
     <div>
-      <div className="flex" style={{ justifyContent: 'space-between', marginBottom: 2 }}>
-        <span style={{ fontSize: 12, fontWeight: 700 }}>{title}</span>
-        <span className="mono" style={{ fontSize: 11, color }}>{rows.length ? rows[rows.length - 1].cum.toLocaleString() : 0} pcs</span>
+      <div className="flex" style={{ gap: 14, marginBottom: 4 }}>
+        {series.map(s => <span key={s.key} className="flex" style={{ gap: 5, fontSize: 11, fontWeight: 700, color: s.color }}><span style={{ width: 14, height: 3, background: s.color, borderRadius: 2 }} />{s.label}</span>)}
+        <span className="flex" style={{ gap: 5, fontSize: 11, color: '#94a3b8' }}><span style={{ width: 14, height: 0, borderTop: '2px dashed #94a3b8' }} />100% target</span>
       </div>
       <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', display: 'block' }}>
         {ticks.map((t, i) => (
           <g key={i}>
             <line x1={pad.l} y1={t.yy} x2={W - pad.r} y2={t.yy} stroke="#eef2f7" />
-            <text x={pad.l - 4} y={t.yy + 3} textAnchor="end" fontSize="8" fill="#94a3b8">{t.v}</text>
+            <text x={pad.l - 4} y={t.yy + 3} textAnchor="end" fontSize="8" fill="#94a3b8">{t.v}%</text>
           </g>
         ))}
-        {rows.map((r, i) => r.day > 0 ? (
-          <rect key={i} x={pad.l + i * bw + bw * 0.2} y={y(r.day)} width={bw * 0.6} height={Math.max(0, pad.t + ih - y(r.day))} rx="1.5" fill={color} opacity="0.3" />
-        ) : null)}
-        <polyline points={linePts} fill="none" stroke={color} strokeWidth="2" strokeLinejoin="round" />
-        {rows.map((r, i) => <circle key={i} cx={pad.l + i * bw + bw / 2} cy={y(r.cum)} r="2" fill={color} />)}
-        {rows.map((r, i) => (i % Math.ceil(n / 7) === 0) ? (
-          <text key={i} x={pad.l + i * bw + bw / 2} y={H - 8} textAnchor="middle" fontSize="7.5" fill="#94a3b8">{r.label}</text>
+        {/* 100% target reference */}
+        <line x1={pad.l} y1={y(100)} x2={W - pad.r} y2={y(100)} stroke="#94a3b8" strokeWidth="1" strokeDasharray="4 3" />
+        {series.map(s => (
+          <g key={s.key}>
+            <polyline points={lineFor(s.key)} fill="none" stroke={s.color} strokeWidth="2" strokeLinejoin="round" />
+            {rows.map((r, i) => r[s.key] > 0 ? <circle key={i} cx={cx(i)} cy={y(r[s.key])} r="2.3" fill={s.color} /> : null)}
+          </g>
+        ))}
+        {rows.map((r, i) => (i % step === 0) ? (
+          <text key={i} x={cx(i)} y={H - 8} textAnchor="middle" fontSize="7.5" fill="#94a3b8">{r.label}</text>
         ) : null)}
       </svg>
     </div>
@@ -82,9 +90,9 @@ export default function ProductionPlan({ style }) {
     pc += plan; ac += act
     return { dt, raw: e, plan, act, planCum: pc, actCum: ac, planEff: eff(plan), actEff: eff(act), fri: isFriday(dt) }
   })
-  const maxCum = Math.max(...rows.map(r => r.planCum), ...rows.map(r => r.actCum), 1)
-  const planChart = rows.map(r => ({ label: fmtDay(r.dt), day: r.plan, cum: r.planCum }))
-  const actChart = rows.map(r => ({ label: fmtDay(r.dt), day: r.act, cum: r.actCum }))
+  const effChart = rows.map(r => ({ label: fmtDay(r.dt), planEff: r.planEff, actEff: r.actEff }))
+  const avgPlanEff = (() => { const v = rows.map(r => r.planEff).filter(x => x > 0); return v.length ? round(v.reduce((a, b) => a + b, 0) / v.length, 1) : 0 })()
+  const avgActEff = (() => { const v = rows.map(r => r.actEff).filter(x => x > 0); return v.length ? round(v.reduce((a, b) => a + b, 0) / v.length, 1) : 0 })()
   const totPlan = pc, totAct = ac
   const achv = totPlan > 0 ? round(totAct / totPlan * 100, 1) : 0
 
@@ -164,8 +172,14 @@ export default function ProductionPlan({ style }) {
         </div>
 
         <div className="pp-charts">
-          <div className="card card-pad"><PlanChart rows={planChart} color="#2563eb" title="📘 Planned (daily + cumulative)" max={maxCum} /></div>
-          <div className="card card-pad"><PlanChart rows={actChart} color="#16a34a" title="📗 Actual (daily + cumulative)" max={maxCum} /></div>
+          <div className="card card-pad">
+            <div className="flex" style={{ justifyContent: 'space-between', marginBottom: 2 }}>
+              <span style={{ fontSize: 12, fontWeight: 700 }}>📈 Daily Efficiency — Plan vs Actual</span>
+              <span className="mono" style={{ fontSize: 11 }}><span style={{ color: '#2563eb' }}>{avgPlanEff}%</span> / <span style={{ color: '#16a34a' }}>{avgActEff}%</span> avg</span>
+            </div>
+            <EffChart rows={effChart} />
+            <div className="muted" style={{ fontSize: 10.5, marginTop: 4 }}>Efficiency = (output × SMV) ÷ (manpower × 60) × 100 · per working day</div>
+          </div>
         </div>
       </div>
     </div>

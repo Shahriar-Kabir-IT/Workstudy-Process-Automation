@@ -127,7 +127,7 @@ export default function LineLayout({ style }) {
       onMouseLeave: () => setHover(h => (h && h.m === m ? null : h)),
     }
     return (
-      <div key={m} {...hv} onDragOver={e => { e.preventDefault(); setOver(m) }} onDragLeave={() => setOver(o => o === m ? null : o)} onDrop={() => onDropMachine(m)}
+      <div key={m} className="ll-station" {...hv} onDragOver={e => { e.preventDefault(); setOver(m) }} onDragLeave={() => setOver(o => o === m ? null : o)} onDrop={() => onDropMachine(m)}
         onClick={() => clickMachine(m)}
         style={{ border: `2px solid ${isOver ? col : list.length ? col + '99' : picked != null ? '#38709055' : 'var(--line)'}`, borderRadius: 9, background: isOver ? '#f0fbff' : '#fff', minHeight: 58, display: 'flex', flexDirection: 'column', cursor: picked != null ? 'copy' : 'default' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '3px 6px', borderBottom: list.length ? '1px solid #f1f5f9' : 'none' }}>
@@ -193,11 +193,32 @@ export default function LineLayout({ style }) {
     )
   }
 
+  // render highest machine number first so W1 ends up at the BOTTOM (line flows bottom → top)
   const stationGrid = (from, to, cols) => (
     <div className="grid" style={{ gridTemplateColumns: cols ? `repeat(${cols},minmax(0,1fr))` : 'repeat(auto-fill,minmax(96px,1fr))', gap: 6, alignContent: 'start' }}>
-      {Array.from({ length: to - from + 1 }, (_, i) => station(from + i))}
+      {Array.from({ length: to - from + 1 }, (_, i) => station(to - i))}
     </div>
   )
+
+  // print ONLY the layout design — clone it into an isolated window (nothing else from the page)
+  const printLayout = () => {
+    const node = document.querySelector('.ll-print-area')
+    if (!node) return
+    const styles = [...document.querySelectorAll('style, link[rel="stylesheet"]')].map(n => n.outerHTML).join('\n')
+    const w = window.open('', '_blank', 'width=1000,height=800')
+    if (!w) return
+    w.document.write(`<!doctype html><html><head><title>Line Layout — ${style.styleNo || ''}</title>${styles}<style>
+      @page { margin: 12mm; }
+      body { margin: 0; padding: 0; background: #fff; }
+      .no-print { display: none !important; }
+      .ll-print-head { display: block !important; margin-bottom: 12px; }
+      .ll-print-box { max-height: none !important; overflow: visible !important; border: none !important; padding: 0 !important; background: #fff !important; }
+      .ll-station { break-inside: avoid; page-break-inside: avoid; }
+    </style></head><body>${node.innerHTML}</body></html>`)
+    w.document.close()
+    w.focus()
+    setTimeout(() => { w.print(); w.close() }, 350)
+  }
 
   const renderLayout = () => {
     if (!line) return null
@@ -221,15 +242,18 @@ export default function LineLayout({ style }) {
 
   return (
     <div>
-      <div className="page-head">
+      <div className="page-head no-print">
         <div><h1>5 · Make Line Layout</h1></div>
-        <button className="btn primary" disabled={!line || !placed}
-          onClick={() => { updateStyle(style.id, { step: Math.max(style.step, 6), status: 'Layout Verification', layoutLine: line, machineOps: mops }); nav(`/style/${style.id}/verify`) }}>Next: Layout Verification →</button>
+        <div className="flex" style={{ gap: 8 }}>
+          {line ? <button className="btn" onClick={printLayout} title="Print only the line layout design">🖨 Print layout</button> : null}
+          <button className="btn primary" disabled={!line || !placed}
+            onClick={() => { updateStyle(style.id, { step: Math.max(style.step, 6), status: 'Layout Verification', layoutLine: line, machineOps: mops }); nav(`/style/${style.id}/verify`) }}>Next: Layout Verification →</button>
+        </div>
       </div>
-      <div style={{ marginBottom: 16 }}><ProgressRail step={style.step} /></div>
+      <div className="no-print" style={{ marginBottom: 16 }}><ProgressRail step={style.step} /></div>
 
       {/* STEP 1 — pick ONE line */}
-      <div className="card">
+      <div className="card no-print">
         <div className="card-head">
           <h3><span style={{ background: line ? '#16a34a' : '#387090', color: '#fff', borderRadius: 6, padding: '1px 8px', fontSize: 13, marginRight: 8 }}>1</span>Select a line</h3>
           {line ? <Badge tone="green">{line.name} · {line.shape}-Shape · {line.machines} machines</Badge> : <span className="hint">pick the line this OB will run on</span>}
@@ -260,7 +284,7 @@ export default function LineLayout({ style }) {
 
       {/* STEP 2 — drag processes onto machines */}
       <div className="card mt">
-        <div className="card-head">
+        <div className="card-head no-print">
           <h3><span style={{ background: line ? '#387090' : '#cbd5e1', color: '#fff', borderRadius: 6, padding: '1px 8px', fontSize: 13, marginRight: 8 }}>2</span>Assign processes to machines</h3>
           {line ? <span className="hint">Pitch time <b style={{ color: '#387090' }}>{pitch.toFixed(2)} min</b> (Total SMV ÷ {style.manpower} MP) · band ±{BAND}</span> : null}
         </div>
@@ -268,13 +292,13 @@ export default function LineLayout({ style }) {
           <div className="card-pad"><Note tone="blue">👆 Select a line above. Its machine stations will appear here to drag processes onto.</Note></div>
         ) : (
           <div className="card-pad">
-            <div className="flex" style={{ gap: 10, marginBottom: 14 }}>
+            <div className="flex no-print" style={{ gap: 10, marginBottom: 14 }}>
               <div className="bar-track" style={{ flex: 1 }}><div style={{ height: '100%', borderRadius: 999, width: progress + '%', background: progColor, transition: '.2s' }} /></div>
               <span style={{ fontSize: 12, fontWeight: 700, color: progColor }}>{placed}/{ops.length} processes placed</span>
             </div>
             <div className="layout-split">
               {/* process pool */}
-              <div style={{ alignSelf: 'start' }}>
+              <div className="no-print" style={{ alignSelf: 'start' }}>
                 <div className="flex" style={{ justifyContent: 'space-between', alignItems: 'center', marginBottom: 6, gap: 8 }}>
                   <span className="muted" style={{ fontSize: 12, fontWeight: 700 }}>🗂️ OB Processes ({poolOps.length}{section ? ` of ${ops.length}` : ''})</span>
                   <select className="inp" value={section} onChange={e => setSection(e.target.value)} style={{ height: 30, width: 150, padding: '2px 8px', fontSize: 12 }}>
@@ -291,14 +315,19 @@ export default function LineLayout({ style }) {
                 </div>
               </div>
               {/* machine layout */}
-              <div>
-                <div className="flex" style={{ justifyContent: 'space-between', marginBottom: 8 }}>
+              <div className="ll-print-area">
+                {/* print-only header */}
+                <div className="ll-print-head">
+                  <div style={{ fontSize: 18, fontWeight: 800 }}>Line Layout — {style.styleNo}</div>
+                  <div style={{ fontSize: 12 }}>{style.buyer || ''} · {style.item || ''} · Line {line.name} · {line.shape}-Shape · {line.machines} machines · Pitch {pitch.toFixed(2)} min · {new Date().toLocaleDateString()}</div>
+                </div>
+                <div className="flex no-print" style={{ justifyContent: 'space-between', marginBottom: 8 }}>
                   <div className="muted" style={{ fontSize: 12, fontWeight: 700 }}>🏭 {line.name} · {line.shape}-Shape · {line.machines} machines</div>
                   {picked != null
                     ? <span className="badge blue" style={{ cursor: 'pointer' }} onClick={() => setPicked(null)}>📌 Placing: {opBySl[picked]?.name} — click machines · ✕</span>
                     : <Badge tone={line.shape === 'U' ? 'green' : 'violet'}>{line.shape}-Shape</Badge>}
                 </div>
-                <div style={{ maxHeight: 560, overflow: 'auto', border: `2px solid ${accent(line.shape)}33`, borderRadius: 12, padding: 10, background: '#fbfcfe' }}>
+                <div className="ll-print-box" style={{ maxHeight: 560, overflow: 'auto', border: `2px solid ${accent(line.shape)}33`, borderRadius: 12, padding: 10, background: '#fbfcfe' }}>
                   {renderLayout()}
                 </div>
               </div>

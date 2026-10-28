@@ -141,6 +141,9 @@ export default function CycleTime({ style }) {
   // SMV of the processes actually placed on the line (the stations being studied)
   const placedSls = new Set(Object.values(mops).flat())
   const smv = round([...placedSls].reduce((s, sl) => s + (opBySl[sl]?.smv || 0), 0), 2)
+  // pitch time (takt) = Total SMV ÷ manpower — the per-station balancing target the layout was built on
+  const pitch = style.manpower > 0 ? round(computeOB(ops, style.manpower).pitchTime, 3) : 0
+  const pBand = round(pitch * 0.1, 3)   // ±10% balance window around pitch
   const b = workers && totalTime ? round(totalTime / workers, 4) : 0
   const U = b ? uclCT(b) : 0, L = b ? lclCT(b) : 0
   const potential = b ? Math.floor(60 / b) : 0
@@ -229,7 +232,7 @@ export default function CycleTime({ style }) {
       {/* observation grid */}
       <div className="card mt">
         <div className="card-head"><h3>Observation — Round {roundN}</h3>
-          <span className="hint">{locked ? '🔒 Round complete & locked — delete a cycle (✕) to re-measure' : 'capture 5 cycles per station · ✕ deletes a cycle'}</span>
+          <span className="hint">{locked ? '🔒 Round complete & locked — delete a cycle (✕) to re-measure' : 'capture 5 cycles per station · ✕ deletes a cycle'}{pitch > 0 ? ` · status vs pitch ${pitch} min (±10%)` : ''}</span>
         </div>
         <div className="table-wrap" style={{ border: 'none', borderRadius: 0, maxHeight: 460 }}>
           <table className="ct-table">
@@ -237,7 +240,8 @@ export default function CycleTime({ style }) {
             <tbody>
               {rows.map(st => {
                 const reads = readsOf(st.key)
-                const within = st.avg > 0 && b && st.avg <= U && st.avg >= L
+                // status vs PITCH TIME: within ±10% of pitch = balanced; above = bottleneck; below = fast
+                const within = st.avg > 0 && pitch > 0 && st.avg <= pitch + pBand && st.avg >= pitch - pBand
                 const running = timer && timer.key === st.key
                 const full = stDone(st.key)
                 const secs = running ? ((nowTs - timer.start) / 1000).toFixed(1) : null
@@ -268,7 +272,7 @@ export default function CycleTime({ style }) {
                     ))}
                     <td className="num mono" style={{ fontWeight: 700 }}>{st.avg || '—'}</td>
                     <td className="num mono" style={{ color: '#16a34a', fontWeight: 600 }}>{st.cap || '—'}</td>
-                    <td>{st.avg <= 0 ? <span className="muted">—</span> : !b ? '—' : within ? <Badge tone="green">In control</Badge> : st.avg > U ? <Badge tone="red">Bottleneck</Badge> : <Badge tone="blue">Fast</Badge>}</td>
+                    <td>{st.avg <= 0 ? <span className="muted">—</span> : !pitch ? '—' : within ? <Badge tone="green">In control</Badge> : st.avg > pitch + pBand ? <Badge tone="red">Bottleneck</Badge> : <Badge tone="blue">Fast</Badge>}</td>
                   </tr>
                 )
               })}
