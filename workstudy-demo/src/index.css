@@ -335,3 +335,19 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 .ob-quickadd-sep { display: flex; align-items: center; text-align: center; color: var(--muted); font-size: 11.5px; margin: 14px 0 10px; }
 .ob-quickadd-sep::before, .ob-quickadd-sep::after { content: ''; flex: 1; height: 1px; background: var(--line); }
 .ob-quickadd-sep span { padding: 0 12px; }
+
+/* ---------------- Line Layout print ---------------- */
+.ll-print-head { display: none; }
+@media print {
+  /* hide everything not part of the layout (keeps normal flow — no blank pages) */
+  .no-print { display: none !important; }
+  .layout-split { display: block !important; }
+  .card { border: none !important; box-shadow: none !important; margin: 0 !important; }
+  .card-pad { padding: 0 !important; }
+  .ll-print-head { display: block; margin-bottom: 12px; }
+  /* expand the scroll box so the whole layout prints */
+  .ll-print-box { max-height: none !important; overflow: visible !important; border: none !important; background: #fff !important; padding: 0 !important; }
+  /* never split a machine card across a page */
+  .ll-station { break-inside: avoid; page-break-inside: avoid; }
+  @page { margin: 12mm; }
+}
