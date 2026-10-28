@@ -1,9 +1,8 @@
 // API client for the Work Study backend (PostgreSQL-backed, authenticated).
-// If VITE_API_URL is set it wins; otherwise derive the API host from wherever the
-// page was opened (same hostname, port 4000) so it works on LAN, a public IP, or localhost.
-const API_PORT = 4000
+// If VITE_API_URL is set it wins; otherwise call the SAME origin the page was served
+// from (the web server proxies /api -> the API), so only one port is ever exposed.
 const BASE = import.meta.env.VITE_API_URL
-  || (typeof location !== 'undefined' ? `${location.protocol}//${location.hostname}:${API_PORT}` : 'http://localhost:4000')
+  || (typeof location !== 'undefined' ? location.origin : 'http://localhost:4000')
 const TOKEN_KEY = 'ws_token'
 
 export const token = {
