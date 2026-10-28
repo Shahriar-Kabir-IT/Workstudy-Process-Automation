@@ -1,5 +1,5 @@
 {
-  "_readme": "Runtime configuration \u2014 OB library now lives in PostgreSQL (served by the API, VITE_API_URL). Edit sections here and reload; omitted sections fall back to defaults.",
+  "_readme": "Runtime configuration — OB library now lives in PostgreSQL (served by the API, VITE_API_URL). Edit sections here and reload; omitted sections fall back to defaults.",
   "engine": {
     "minutesPerHour": 60,
     "matrixMinutesPerHour": 51,
@@ -26,7 +26,7 @@
     {
       "n": 2,
       "key": "sample",
-      "label": "Approved Sample",
+      "label": "Sample Photos",
       "role": "Production Co-ordinator"
     },
     {
@@ -59,14 +59,14 @@
       "n": 7,
       "key": "plan",
       "label": "Production Plan",
-      "role": "\u2014",
+      "role": "—",
       "low": true
     },
     {
       "n": 8,
       "key": "changeover",
       "label": "Change Over Time",
-      "role": "\u2014",
+      "role": "—",
       "low": true
     },
     {

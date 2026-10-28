@@ -12,12 +12,10 @@ export default function ApprovedSample({ style }) {
   const [err, setErr] = useState('')
   const [lightbox, setLightbox] = useState(null)
   const list = photos[style.id] || []
-  const approved = style.sampleApproved
   const canManage = can('sampleManage', user.role)   // upload photos (WSE)
-  const canDecide = can('sampleDecide', user.role)    // approve / reject
 
-  const approve = () => updateStyle(style.id, { sampleApproved: true, sampleRejected: null, step: Math.max(style.step, 3) })
-  const reject = () => updateStyle(style.id, { sampleApproved: false, sampleRejected: { by: user.name }, step: 2 })
+  // sample pictures need no approval — collecting them advances the flow directly
+  const proceed = () => { updateStyle(style.id, { sampleApproved: true, step: Math.max(style.step, 3) }); nav(`/style/${style.id}/ob`) }
 
   const onFiles = (files) => {
     setErr('')
@@ -35,9 +33,9 @@ export default function ApprovedSample({ style }) {
   return (
     <div>
       <div className="page-head">
-        <div><h1>2 · Collect Approved Sample</h1><div className="sub">Source: Production Co-ordinator</div></div>
-        <button className="btn primary" disabled={!approved} title={approved ? '' : 'Approve the sample first'}
-          onClick={() => nav(`/style/${style.id}/ob`)}>Next: Operation Breakdown →</button>
+        <div><h1>2 · Sample Photos</h1><div className="sub">Source: Production Co-ordinator</div></div>
+        <button className="btn primary" disabled={!canManage} title={canManage ? '' : 'Only the WSE can proceed'}
+          onClick={proceed}>Next: Operation Breakdown →</button>
       </div>
       <div style={{ marginBottom: 16 }}><ProgressRail step={style.step} /></div>
 
@@ -86,20 +84,13 @@ export default function ApprovedSample({ style }) {
           <KV k="Category" v={style.category} />
           <KV k="Buyer" v={style.buyer} />
           <KV k="Photos attached" v={list.length} />
-          <KV k="Sample Status" v={approved ? <Badge tone="green">Approved ✓</Badge> : style.sampleRejected ? <Badge tone="red">Rejected</Badge> : <Badge tone="amber">Pending</Badge>} />
-          <div className="flex wrap" style={{ marginTop: 14, gap: 8 }}>
-            {canDecide ? (
-              <>
-                <button className="btn primary" disabled={approved || !list.length} onClick={approve}>{approved ? 'Approved ✓' : '✓ Approve'}</button>
-                {!approved ? <button className="btn" style={{ color: '#dc2626', borderColor: '#fecaca' }} disabled={!list.length} onClick={reject}>✕ Reject</button> : null}
-              </>
-            ) : null}
-            {approved ? <button className="btn" onClick={() => nav(`/style/${style.id}/ob`)}>Go to Operation Breakdown →</button> : null}
-          </div>
-          {style.sampleRejected && !approved ? <div style={{ marginTop: 8 }}><Note tone="">Sample rejected by {style.sampleRejected.by} — re-upload / resubmit.</Note></div> : null}
-          {!list.length ? <div className="muted" style={{ fontSize: 12, marginTop: 8 }}>Upload at least one photo to enable approval.</div>
-            : !approved ? <div className="muted" style={{ fontSize: 12, marginTop: 8 }}>Approving the sample unlocks the Operation Breakdown.</div> : null}
-          <Note tone="blue">Attach multiple angles (front, back, detail). The sample defines <b>which operations</b> the garment needs — SMV comes from the master database.</Note>
+          <KV k="Sample" v={<Badge tone={list.length ? 'green' : 'gray'}>{list.length ? 'Collected ✓' : 'No photos yet'}</Badge>} />
+          {canManage ? (
+            <div className="flex wrap" style={{ marginTop: 14, gap: 8 }}>
+              <button className="btn primary" onClick={proceed}>Continue to Operation Breakdown →</button>
+            </div>
+          ) : null}
+          <Note tone="blue">Attach multiple angles (front, back, detail) for reference — no approval needed. The sample defines <b>which operations</b> the garment needs; SMV comes from the master database.</Note>
         </Card>
       </div>
 
