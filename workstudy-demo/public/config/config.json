@@ -332,107 +332,107 @@
         {
           "name": "A (PADMA)-3",
           "shape": "U",
-          "machines": 89
+          "machines": 95
         },
         {
           "name": "B (MEGHNA)-3",
           "shape": "U",
-          "machines": 92
+          "machines": 95
         },
         {
           "name": "C (JAMUNA)-3",
           "shape": "U",
-          "machines": 81
+          "machines": 95
         },
         {
           "name": "D (RUPSHA)-3",
           "shape": "U",
-          "machines": 78
+          "machines": 95
         },
         {
           "name": "E (BURIGANGA)-3",
           "shape": "U",
-          "machines": 81
+          "machines": 95
         },
         {
           "name": "F (NAF)-3",
           "shape": "U",
-          "machines": 83
+          "machines": 95
         },
         {
           "name": "G (BANGSHI)-4",
           "shape": "U",
-          "machines": 85
+          "machines": 95
         },
         {
           "name": "H (DAKATIA)-4",
           "shape": "U",
-          "machines": 81
+          "machines": 95
         },
         {
           "name": "I (SHIBSA)-4",
           "shape": "U",
-          "machines": 81
+          "machines": 95
         },
         {
           "name": "J (KARNAPHULI)-4",
           "shape": "U",
-          "machines": 81
+          "machines": 95
         },
         {
           "name": "K (SURMA)-4",
           "shape": "U",
-          "machines": 82
+          "machines": 95
         },
         {
           "name": "L (ICHAMOTI)-4",
           "shape": "U",
-          "machines": 91
+          "machines": 95
         },
         {
           "name": "M (ATRAI)-5",
           "shape": "U",
-          "machines": 83
+          "machines": 95
         },
         {
           "name": "N (SHITALAKSHYA)-5",
           "shape": "U",
-          "machines": 83
+          "machines": 95
         },
         {
           "name": "N-1 (BRAHMAPUTRA)-4",
-          "shape": "U",
-          "machines": 58
+          "shape": "I",
+          "machines": 66
         },
         {
           "name": "N-2 (KAPOTAKKHA)-3",
-          "shape": "U",
-          "machines": 62
+          "shape": "I",
+          "machines": 66
         },
         {
           "name": "N-10 (POSHUR)-3",
-          "shape": "U",
-          "machines": 60
+          "shape": "I",
+          "machines": 66
         },
         {
           "name": "N-11 (KUSHIARA)-4",
-          "shape": "U",
-          "machines": 60
+          "shape": "I",
+          "machines": 66
         },
         {
           "name": "N-12 (KHOWAI)-5",
-          "shape": "U",
-          "machines": 61
+          "shape": "I",
+          "machines": 66
         },
         {
           "name": "N-15 (BALU)-5",
-          "shape": "U",
-          "machines": 70
+          "shape": "I",
+          "machines": 66
         },
         {
           "name": "O (MADHUMATI)-5",
           "shape": "U",
-          "machines": 82
+          "machines": 95
         }
       ]
     },
@@ -442,108 +442,108 @@
       "lines": [
         {
           "name": "N-3 (NILDARIA)-6",
-          "shape": "U",
-          "machines": 58
+          "shape": "I",
+          "machines": 66
         },
         {
           "name": "N-4 (ARIAL KHA)-7",
           "shape": "U",
-          "machines": 81
+          "machines": 95
         },
         {
           "name": "N-5 (BANGALI)-7",
           "shape": "U",
-          "machines": 79
+          "machines": 95
         },
         {
           "name": "N-6 (DHARLA)-7",
           "shape": "U",
-          "machines": 90
+          "machines": 95
         },
         {
           "name": "N-7 (BHOLA)-7",
           "shape": "U",
-          "machines": 81
+          "machines": 95
         },
         {
           "name": "N-8 (MUHURI)-5",
-          "shape": "U",
-          "machines": 64
+          "shape": "I",
+          "machines": 66
         },
         {
           "name": "N-9 (SHANDHA)-6",
-          "shape": "U",
-          "machines": 62
+          "shape": "I",
+          "machines": 66
         },
         {
           "name": "N-13 (KIRTONKHOLAI)-7",
-          "shape": "U",
-          "machines": 61
+          "shape": "I",
+          "machines": 66
         },
         {
           "name": "N-14 (PAYRA)-7",
-          "shape": "U",
-          "machines": 60
+          "shape": "I",
+          "machines": 66
         },
         {
           "name": "N-16 (SANGU)-6",
-          "shape": "U",
-          "machines": 63
+          "shape": "I",
+          "machines": 66
         },
         {
           "name": "P (BHOIRAB)-5",
           "shape": "U",
-          "machines": 85
+          "machines": 95
         },
         {
           "name": "Q (CHITRA)-5",
           "shape": "U",
-          "machines": 86
+          "machines": 95
         },
         {
           "name": "R (GOMOTI)-5",
           "shape": "U",
-          "machines": 83
+          "machines": 95
         },
         {
           "name": "S (GORAI)-6",
           "shape": "U",
-          "machines": 93
+          "machines": 95
         },
         {
           "name": "T (TITAS)-6",
           "shape": "U",
-          "machines": 82
+          "machines": 95
         },
         {
           "name": "U (TURAG)-6",
           "shape": "U",
-          "machines": 80
+          "machines": 95
         },
         {
           "name": "V (TEESTA)-6",
           "shape": "U",
-          "machines": 83
+          "machines": 95
         },
         {
           "name": "W (MOHANANDA)-6",
           "shape": "U",
-          "machines": 75
+          "machines": 95
         },
         {
           "name": "X (KAROTOA)-6",
           "shape": "U",
-          "machines": 78
+          "machines": 95
         },
         {
           "name": "Y (DHALESHWARI)-7",
           "shape": "U",
-          "machines": 79
+          "machines": 95
         },
         {
           "name": "Z (HALDA)-7",
           "shape": "U",
-          "machines": 80
+          "machines": 95
         }
       ]
     },
@@ -554,7 +554,7 @@
         {
           "name": "SL-01 (MYMENSINGH)-4",
           "shape": "U",
-          "machines": 77
+          "machines": 80
         },
         {
           "name": "SL-02(BOGRA)-4",
@@ -564,12 +564,12 @@
         {
           "name": "SL-03(GAZIPUR)-4",
           "shape": "U",
-          "machines": 77
+          "machines": 80
         },
         {
           "name": "SL-04(DINAJPUR)-4",
           "shape": "U",
-          "machines": 75
+          "machines": 80
         },
         {
           "name": "SL-05(RANGPUR)-4",
@@ -579,52 +579,52 @@
         {
           "name": "SL-06(DHAKA)-4",
           "shape": "U",
-          "machines": 79
+          "machines": 80
         },
         {
           "name": "SL-07(BARISAL)-5",
           "shape": "U",
-          "machines": 71
+          "machines": 80
         },
         {
           "name": "SL-08(TANGAIL)-5",
           "shape": "U",
-          "machines": 78
+          "machines": 80
         },
         {
           "name": "SL-09(FARIDPUR)-5",
           "shape": "U",
-          "machines": 77
+          "machines": 80
         },
         {
           "name": "SL-10(PABNA)-5",
           "shape": "U",
-          "machines": 75
+          "machines": 80
         },
         {
           "name": "SL-11(COMILLA)-5",
           "shape": "U",
-          "machines": 81
+          "machines": 80
         },
         {
           "name": "SL-12(NOAKHALI)-5",
           "shape": "U",
-          "machines": 72
+          "machines": 80
         },
         {
           "name": "SL-13(KHULNA)-6",
           "shape": "U",
-          "machines": 81
+          "machines": 80
         },
         {
           "name": "SL-14(KUSHTIA)-6",
           "shape": "U",
-          "machines": 83
+          "machines": 80
         },
         {
           "name": "SL-15(CHITTAGONG)-6",
           "shape": "U",
-          "machines": 79
+          "machines": 80
         },
         {
           "name": "SL-16(JESSORE)-6",
@@ -634,37 +634,37 @@
         {
           "name": "SL-17(RAJSHAHI)-6",
           "shape": "U",
-          "machines": 82
+          "machines": 80
         },
         {
           "name": "SL-18(SYLHET)-6",
           "shape": "U",
-          "machines": 74
+          "machines": 80
         },
         {
           "name": "SL-19(NETROKONA)-7",
-          "shape": "U",
-          "machines": 65
+          "shape": "I",
+          "machines": 62
         },
         {
           "name": "SL-20(JAMALPUR)-7",
-          "shape": "U",
-          "machines": 67
+          "shape": "I",
+          "machines": 62
         },
         {
           "name": "SL-21(GAIBANDHA)-7",
-          "shape": "U",
-          "machines": 64
+          "shape": "I",
+          "machines": 62
         },
         {
           "name": "SL-22(SHERPUR)-7",
-          "shape": "U",
-          "machines": 65
+          "shape": "I",
+          "machines": 62
         },
         {
           "name": "SL-23(NAOGAON)-7",
-          "shape": "U",
-          "machines": 64
+          "shape": "I",
+          "machines": 62
         }
       ]
     },
@@ -674,108 +674,108 @@
       "lines": [
         {
           "name": "SL-01(A)-3",
-          "shape": "U",
-          "machines": 77
+          "shape": "I",
+          "machines": 75
         },
         {
           "name": "SL-02(B)-3",
-          "shape": "U",
-          "machines": 81
+          "shape": "I",
+          "machines": 75
         },
         {
           "name": "SL-03(C)-3",
-          "shape": "U",
-          "machines": 78
+          "shape": "I",
+          "machines": 75
         },
         {
           "name": "SL-04(D)-3",
-          "shape": "U",
+          "shape": "I",
           "machines": 75
         },
         {
           "name": "SL-05(E)-3",
-          "shape": "U",
-          "machines": 77
+          "shape": "I",
+          "machines": 75
         },
         {
           "name": "SL-06(F)-3",
           "shape": "U",
-          "machines": 77
+          "machines": 75
         },
         {
           "name": "SL-07(G)-3",
           "shape": "U",
-          "machines": 79
+          "machines": 75
         },
         {
           "name": "SL-08(H)-3",
           "shape": "U",
-          "machines": 76
+          "machines": 75
         },
         {
           "name": "SL-09(I)-4",
-          "shape": "U",
-          "machines": 81
+          "shape": "I",
+          "machines": 75
         },
         {
           "name": "SL-10(J)-4",
-          "shape": "U",
-          "machines": 73
+          "shape": "I",
+          "machines": 75
         },
         {
           "name": "SL-11(K)-4",
-          "shape": "U",
-          "machines": 80
+          "shape": "I",
+          "machines": 75
         },
         {
           "name": "SL-12(L)-4",
-          "shape": "U",
-          "machines": 72
+          "shape": "I",
+          "machines": 75
         },
         {
           "name": "SL-13(M)-4",
-          "shape": "U",
-          "machines": 79
+          "shape": "I",
+          "machines": 75
         },
         {
           "name": "SL-14(N)-4",
           "shape": "U",
-          "machines": 74
+          "machines": 75
         },
         {
           "name": "SL-15(O)-4",
           "shape": "U",
-          "machines": 79
+          "machines": 75
         },
         {
           "name": "SL-16(P)-4",
           "shape": "U",
-          "machines": 70
+          "machines": 75
         },
         {
           "name": "SL-17(Q)-5",
-          "shape": "U",
-          "machines": 78
+          "shape": "I",
+          "machines": 75
         },
         {
           "name": "SL-18(R)-5",
-          "shape": "U",
-          "machines": 76
+          "shape": "I",
+          "machines": 75
         },
         {
           "name": "SL-19(S)-5",
-          "shape": "U",
-          "machines": 79
+          "shape": "I",
+          "machines": 75
         },
         {
           "name": "SL-20(T)-5",
-          "shape": "U",
-          "machines": 80
+          "shape": "I",
+          "machines": 75
         },
         {
           "name": "SL-21(U)-5",
-          "shape": "U",
-          "machines": 78
+          "shape": "I",
+          "machines": 75
         }
       ]
     }
