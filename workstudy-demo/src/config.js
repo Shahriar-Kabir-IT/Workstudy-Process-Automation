@@ -51,7 +51,7 @@ export const DEFAULTS = {
   // ---- 10-step workflow (relabel / reorder here) ----
   steps: [
     { n: 1, key: 'order', label: 'Order Details', role: 'Planning Board' },
-    { n: 2, key: 'sample', label: 'Approved Sample', role: 'Production Co-ordinator' },
+    { n: 2, key: 'sample', label: 'Sample Photos', role: 'Production Co-ordinator' },
     { n: 3, key: 'ob', label: 'Operation Breakdown', role: 'WSE' },
     { n: 4, key: 'approval', label: 'OB Approval', role: 'Asst. Mgr. (Central)', gate: true },
     { n: 5, key: 'layout', label: 'Line Layout', role: 'WSE' },

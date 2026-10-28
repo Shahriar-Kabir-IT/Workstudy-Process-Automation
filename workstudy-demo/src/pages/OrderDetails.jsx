@@ -8,7 +8,7 @@ export default function OrderDetails({ style }) {
     <div>
       <div className="page-head">
         <div><h1>1 · Order Details</h1><div className="sub">Source: Planning Board</div></div>
-        <button className="btn primary" onClick={() => nav(`/style/${style.id}/sample`)}>Next: Approved Sample →</button>
+        <button className="btn primary" onClick={() => nav(`/style/${style.id}/sample`)}>Next: Sample Photos →</button>
       </div>
       <div style={{ marginBottom: 16 }}><ProgressRail step={style.step} /></div>
 

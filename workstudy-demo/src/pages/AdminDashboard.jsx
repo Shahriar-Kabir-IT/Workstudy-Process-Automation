@@ -30,15 +30,14 @@ export default function AdminLayout() {
   // pending approvals
   const actions = []
   allStyles.forEach(s => {
-    if (!s.sampleApproved) actions.push({ s, label: 'Approve sample', tone: 'amber', type: 'sample' })
+    // sample pictures need no approval — not a pending action anymore
     if (s.changeRequest?.status === 'pending') actions.push({ s, label: 'OB change request', tone: 'amber', type: 'change' })
     else if (s.ops?.length && !s.obApproved) actions.push({ s, label: 'Approve / reject OB', tone: 'blue', type: 'ob' })
     if (s.obApproved && !s.layoutVerified && linesOf(s).length) actions.push({ s, label: 'Verify layout', tone: 'cyan', type: 'verify' })
   })
   const decide = (a, ok) => {
     const s = a.s, by = user.name
-    if (a.type === 'sample') updateStyle(s.id, ok ? { sampleApproved: true, sampleRejected: null, step: Math.max(s.step, 3) } : { sampleApproved: false, sampleRejected: { by }, step: 2 })
-    else if (a.type === 'ob') updateStyle(s.id, ok ? { obApproved: true, approvedBy: by, step: Math.max(s.step, 5), status: 'Line Layout', obRejected: null, changeRequest: null, obHistory: appendVersion(s, by) } : { obApproved: false, step: 3, status: 'Operation Breakdown', obRejected: { by } })
+    if (a.type === 'ob') updateStyle(s.id, ok ? { obApproved: true, approvedBy: by, step: Math.max(s.step, 5), status: 'Line Layout', obRejected: null, changeRequest: null, obHistory: appendVersion(s, by) } : { obApproved: false, step: 3, status: 'Operation Breakdown', obRejected: { by } })
     else if (a.type === 'change') updateStyle(s.id, { changeRequest: { ...s.changeRequest, status: ok ? 'approved' : 'rejected', decidedBy: by } })
     else if (a.type === 'verify') updateStyle(s.id, ok ? { layoutVerified: true, step: Math.max(s.step, 7), status: 'Assign Workers' } : { layoutVerified: false, step: 5, status: 'Line Layout' })
     setAct(null)
@@ -319,7 +318,7 @@ function StyleDetailModal({ s, photos, onClose }) {
             <div>
               <div className="muted" style={{ fontSize: 12, fontWeight: 700, marginBottom: 6 }}>STATUS</div>
               <Row k="Current Step" v={`${s.step} · ${stepLabel}`} />
-              <Row k="Sample" v={s.sampleApproved ? <Badge tone="green">Approved</Badge> : s.sampleRejected ? <Badge tone="red">Rejected</Badge> : <Badge tone="amber">Pending</Badge>} />
+              <Row k="Sample" v={(s.photos?.length || s.sampleApproved) ? <Badge tone="green">Collected</Badge> : <Badge tone="gray">—</Badge>} />
               <Row k="OB" v={s.obApproved ? <Badge tone="green">Approved v{s.obVersion || 1}</Badge> : <Badge tone="amber">Draft v{s.obVersion || 1}</Badge>} />
               <Row k="Approved By" v={s.approvedBy || '—'} />
               <Row k="Change Request" v={s.changeRequest ? <Badge tone={s.changeRequest.status === 'approved' ? 'green' : s.changeRequest.status === 'rejected' ? 'red' : 'amber'}>{s.changeRequest.status}</Badge> : '—'} />
