@@ -78,7 +78,7 @@ export default function OperationBreakdown({ style }) {
     const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
     const kv = (rows) => rows.map(([k, v]) => `<tr><td class="k">${k}</td><td class="c">:</td><td class="v">${v ?? ''}</td></tr>`).join('')
     const info = kv([['Style No / Name', style.styleNo], ['Item', style.item], ['Buyer', style.buyer], ['Product Category', style.category], ['Size', style.sizeBreakdown], ['Fabric Type (Composition)', style.fabricComposition], ['OB Prepared On', dateStr]])
-    const smvb = kv([['Machine SMV', o2.machineSMV], ['Manual SMV', o2.manualSMV], ['Total SMV', o2.totalSMV], ['MANPOWER', style.manpower], ['OB Prepared By', style.preparedBy], ['OB Approved By', style.approvedBy]])
+    const smvb = kv([['Machine SMV', o2.machineSMV], ['Manual SMV', o2.manualSMV], ['Total SMV', o2.totalSMV], ['MANPOWER', style.manpower], ['Pitch Time', `${o2.pitchTime} min`], ['OB Prepared By', style.preparedBy], ['OB Approved By', style.approvedBy]])
     const rowsHtml = o2.rows.map(r => `<tr><td class="num">${r.sl}</td><td class="l">${r.name}</td><td>${r.section || ''}</td><td>${r.machine}</td><td class="num">${r.smv.toFixed(2)}</td><td class="num">${r.tml.toFixed(2)}</td><td class="num">${r.aml}</td><td class="num">${r.target}</td></tr>`).join('')
     const totalAml = o2.rows.reduce((s, r) => s + (Number(r.aml) || 0), 0)
     const css = `@page{margin:10mm}body{margin:0;background:#fff;color:#14303f;font-family:Arial,Helvetica,sans-serif}.no-print{display:none!important}
