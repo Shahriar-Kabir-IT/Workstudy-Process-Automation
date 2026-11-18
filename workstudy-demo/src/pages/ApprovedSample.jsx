@@ -96,8 +96,8 @@ export default function ApprovedSample({ style }) {
 
       {lightbox ? (
         <div onClick={() => setLightbox(null)}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(2,8,23,.8)', display: 'grid', placeItems: 'center', zIndex: 50, padding: 30 }}>
-          <img src={lightbox} alt="Sample" style={{ maxWidth: '92%', maxHeight: '90%', borderRadius: 10, boxShadow: '0 20px 60px rgba(0,0,0,.5)' }} />
+          style={{ position: 'fixed', inset: 0, background: 'rgba(2,8,23,.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: 24, boxSizing: 'border-box' }}>
+          <img src={lightbox} alt="Sample" style={{ maxWidth: 'calc(100vw - 48px)', maxHeight: 'calc(100vh - 48px)', width: 'auto', height: 'auto', objectFit: 'contain', borderRadius: 10, boxShadow: '0 20px 60px rgba(0,0,0,.5)' }} />
         </div>
       ) : null}
     </div>

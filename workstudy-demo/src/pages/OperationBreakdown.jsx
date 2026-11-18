@@ -21,6 +21,7 @@ const SPECIAL_OPS = [
   { name: 'Hook', machine: 'HOOK', rate: 0.10 },
   { name: 'Bar', machine: 'BAR', rate: 0.10 },
   { name: 'Grommet Attach', machine: 'GROMMET', rate: 0.10 },
+  { name: 'Reinforcement', machine: 'SNLS', rate: 0.05 },
 ]
 
 export default function OperationBreakdown({ style }) {
@@ -56,6 +57,16 @@ export default function OperationBreakdown({ style }) {
     const i = ops.findIndex(o => o.sl === sl); const j = i + dir
     if (i < 0 || j < 0 || j >= ops.length) return
     const arr = [...ops];[arr[i], arr[j]] = [arr[j], arr[i]]
+    updateStyle(style.id, { ops: arr.map((o, k) => ({ ...o, sl: k + 1 })) })
+  }
+  // drag-and-drop reorder
+  const [dragSl, setDragSl] = useState(null)
+  const [overSl, setOverSl] = useState(null)
+  const dropOp = (fromSl, toSl) => {
+    if (fromSl == null || fromSl === toSl) return
+    const arr = [...ops]
+    const [moved] = arr.splice(arr.findIndex(o => o.sl === fromSl), 1)
+    arr.splice(arr.findIndex(o => o.sl === toSl), 0, moved)
     updateStyle(style.id, { ops: arr.map((o, k) => ({ ...o, sl: k + 1 })) })
   }
 
@@ -191,13 +202,19 @@ export default function OperationBreakdown({ style }) {
 
       {ob ? (
         <div className="card mt">
-          <div className="card-head"><h3>Operations ({ob.rows.length})</h3></div>
+          <div className="card-head"><h3>Operations ({ob.rows.length})</h3>{!locked && canPrepare ? <span className="hint">⠿ drag a row to reorder</span> : null}</div>
           <div className="table-wrap" style={{ border: 'none', borderRadius: 0, maxHeight: 440 }}>
             <table>
               <thead><tr><th>#</th><th>Process</th><th>Section</th><th>Machine</th><th className="num">SMV</th><th className="num">TML</th><th className="num">AML</th><th className="num">Target/hr</th><th></th></tr></thead>
               <tbody>
                 {ob.rows.map(r => (
-                  <tr key={r.sl}>
+                  <tr key={r.sl} draggable={!locked && canPrepare}
+                    onDragStart={() => setDragSl(r.sl)}
+                    onDragOver={e => { if (dragSl != null) { e.preventDefault(); if (overSl !== r.sl) setOverSl(r.sl) } }}
+                    onDragLeave={() => setOverSl(o => (o === r.sl ? null : o))}
+                    onDrop={() => { dropOp(dragSl, r.sl); setDragSl(null); setOverSl(null) }}
+                    onDragEnd={() => { setDragSl(null); setOverSl(null) }}
+                    style={{ cursor: !locked && canPrepare ? 'grab' : undefined, opacity: dragSl === r.sl ? 0.4 : 1, boxShadow: overSl === r.sl && dragSl != null && dragSl !== r.sl ? 'inset 0 2px 0 #2563eb' : undefined }}>
                     <td className="mono">{r.sl}</td>
                     <td style={{ whiteSpace: 'nowrap' }}>{r.name}</td>
                     <td><span className="muted" style={{ fontSize: 11.5 }}>{r.section || '—'}</span></td>
@@ -209,9 +226,8 @@ export default function OperationBreakdown({ style }) {
                       : <input className="inp" type="number" step="0.5" min="0" value={r.aml} onChange={e => setAml(r.sl, e.target.value)} style={{ width: 58, height: 28, textAlign: 'right', padding: '2px 4px' }} />}</td>
                     <td className="num mono" style={{ color: '#16a34a', fontWeight: 600 }}>{r.target}</td>
                     <td className="right" style={{ whiteSpace: 'nowrap' }}>{locked || !canPrepare ? null : <>
-                      <button className="btn sm" onClick={() => moveOp(r.sl, -1)} disabled={r.sl === 1} title="Move up" style={{ padding: '2px 6px' }}>↑</button>
-                      <button className="btn sm" onClick={() => moveOp(r.sl, 1)} disabled={r.sl === ob.rows.length} title="Move down" style={{ padding: '2px 6px', marginLeft: 3 }}>↓</button>
-                      <button className="btn sm" onClick={() => removeOp(r.sl)} title="Remove" style={{ marginLeft: 3 }}>×</button>
+                      <span title="Drag the row to reorder" style={{ cursor: 'grab', color: '#94a3b8', fontSize: 15, marginRight: 8, userSelect: 'none' }}>⠿</span>
+                      <button className="btn sm" onClick={() => removeOp(r.sl)} title="Remove">×</button>
                     </>}</td>
                   </tr>
                 ))}
