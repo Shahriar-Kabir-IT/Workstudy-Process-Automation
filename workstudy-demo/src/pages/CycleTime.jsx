@@ -174,7 +174,7 @@ export default function CycleTime({ style }) {
   // auto Total Machine / Non-Machine time (CR Cycle 4): machine processes vs Manual/HP/QC
   const macTime = round([...placedSls].reduce((s, sl) => { const o = opBySl[sl]; return s + (o && !/^(MANUAL|HP|QC)$/i.test(o.machine || '') ? (o.smv || 0) : 0) }, 0), 2)
   const nonMacTime = round(smv - macTime, 2)
-  // pitch time (takt) = Total SMV ÷ manpower — the per-station balancing target the layout was built on
+  // pitch time (takt) = Total SMV ÷ operation count (excl. NNVA & QC) — the per-station balancing target the layout was built on
   const pitch = style.manpower > 0 ? round(computeOB(ops, style.manpower).pitchTime, 3) : 0
   const pBand = round(pitch * 0.1, 3)   // ±10% balance window around pitch
   const b = workers && totalTime ? round(totalTime / workers, 4) : 0

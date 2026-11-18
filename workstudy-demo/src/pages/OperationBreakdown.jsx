@@ -158,7 +158,7 @@ export default function OperationBreakdown({ style }) {
           <Stat label="Machine SMV" value={ob.machineSMV} unit="min" accent="#2563eb" />
           <Stat label="Manual SMV" value={ob.manualSMV} unit="min" foot="Helper + Ironman" accent="#0891b2" />
           <Stat label="Total SMV" value={ob.totalSMV} unit="min" accent="#14303f" />
-          <Stat label="Pitch Time" value={ob.pitchTime} unit="min" foot={`Total SMV ÷ ${style.manpower} MP`} />
+          <Stat label="Pitch Time" value={ob.pitchTime} unit="min" foot={`Total SMV ÷ ${ob.opCount} ops (excl. NNVA & QC)`} />
           <Stat label="Target @100%" value={ob.target100} unit="pcs/hr" accent="#16a34a" />
           <Stat label="Target @80%" value={ob.target80} unit="pcs/hr" accent="#65a30d" />
           <Stat label="Target @70%" value={ob.target70} unit="pcs/hr" accent="#d97706" />

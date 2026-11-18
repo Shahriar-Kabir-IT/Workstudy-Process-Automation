@@ -378,7 +378,7 @@ export default function LineLayout({ style }) {
       <div className="card mt">
         <div className="card-head no-print">
           <h3><span style={{ background: line ? '#387090' : '#cbd5e1', color: '#fff', borderRadius: 6, padding: '1px 8px', fontSize: 13, marginRight: 8 }}>2</span>Assign processes to machines</h3>
-          {line ? <span className="hint">Pitch time <b style={{ color: '#387090' }}>{pitch.toFixed(2)} min</b> (Total SMV ÷ {style.manpower} MP) · band ±{BAND}</span> : null}
+          {line ? <span className="hint">Pitch time <b style={{ color: '#387090' }}>{pitch.toFixed(2)} min</b> (Total SMV ÷ {ob.opCount} ops) · band ±{BAND}</span> : null}
         </div>
         {!line ? (
           <div className="card-pad"><Note tone="blue">👆 Select a line above. Its machine stations will appear here to drag processes onto.</Note></div>

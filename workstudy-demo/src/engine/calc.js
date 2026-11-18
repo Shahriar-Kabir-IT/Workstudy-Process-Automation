@@ -73,7 +73,9 @@ export const gradeFromEff = (eff) =>
 // ---- derived OB table rows ----
 export function computeOB(ops, manpower) {
   const tSMV = totalSMV(ops)
-  const pt = pitchTime(tSMV, manpower)
+  // Pitch Time (takt) = Total SMV ÷ number of real operations, excluding NNVA & QC-table rows
+  const opCount = ops.filter(o => !o.nnva && !o.qc).length
+  const pt = safe(tSMV / opCount)
   const rows = ops.map(o => ({
     ...o,
     tml: tml(o.smv, pt),
@@ -85,6 +87,7 @@ export function computeOB(ops, manpower) {
     machineSMV: machineSMV(ops),
     manualSMV: manualSMV(ops),
     pitchTime: round(pt, 3),
+    opCount,
     target100: lineTargetPerHour(manpower, tSMV, 1),
     target80: lineTargetPerHour(manpower, tSMV, 0.8),
     target70: lineTargetPerHour(manpower, tSMV, 0.7),
