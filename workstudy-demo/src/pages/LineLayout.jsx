@@ -10,6 +10,10 @@ const U_ACCENT = '#0d9488', I_ACCENT = '#4f46e5'
 const accent = (s) => (s === 'U' ? U_ACCENT : I_ACCENT)
 const BAND = 0.05
 
+// Only these real sewing machines are counted in the Machine Summary — non-machines
+// (HP/helper, QC, IM/iron, etc.) are excluded.
+const SEWING_MACHINES = new Set(['SNLS', 'SNEC', 'DNLS', 'CS', '2THOL', '3THOL', '4THOL', '5THOL', '6THOL', 'FOA', 'MNCS', 'CVS', 'FL', 'BHL', 'BHC', 'BTK', 'BH', 'EH', 'BLS', 'BTS', 'SNP', 'SHS', 'ZS', 'SMS', 'ACPS', 'ACTT', 'AEC', 'APHC', 'APHL', 'APS', 'AWLA', 'APW', 'SS', 'PS'])
+
 export default function LineLayout({ style }) {
   const nav = useNavigate()
   const { updateStyle, allStyles } = useStore()
@@ -102,7 +106,7 @@ export default function LineLayout({ style }) {
   const totalManpower = staffedStations.length
   const lineTgt100 = ob.totalSMV > 0 ? Math.round((totalManpower * 60) / ob.totalSMV) : 0
   const lineTgt80 = Math.round(lineTgt100 * 0.8)
-  const machineSummary = (() => { const c = {}; staffedStations.forEach(m => { const t = stationMachine(m); c[t] = (c[t] || 0) + 1 }); return Object.entries(c).sort((a, b) => b[1] - a[1]) })()
+  const machineSummary = (() => { const c = {}; staffedStations.forEach(m => { const t = (stationMachine(m) || '').toUpperCase(); if (!SEWING_MACHINES.has(t)) return; c[t] = (c[t] || 0) + 1 }); return Object.entries(c).sort((a, b) => b[1] - a[1]) })()
   const capOf = (m) => { const l = loadOf(m); return l > 0 ? Math.floor(60 / l) : 0 }
 
   // add a Quality Inspection process to the pool (moved here from the OB per CR)
