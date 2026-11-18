@@ -351,3 +351,14 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
   .ll-station { break-inside: avoid; page-break-inside: avoid; }
   @page { margin: 12mm; }
 }
+
+/* ---------------- global print (every page) ---------------- */
+@media print {
+  .sidebar, .topbar, .progress-rail, .no-print, button, .btn, .logout { display: none !important; }
+  .shell { display: block !important; grid-template-columns: 1fr !important; }
+  .main, .content { padding: 0 !important; margin: 0 !important; width: 100% !important; }
+  .card { break-inside: avoid; box-shadow: none !important; border: 1px solid #cbd5e1 !important; }
+  .table-wrap { max-height: none !important; overflow: visible !important; }
+  body { background: #fff !important; }
+  @page { margin: 12mm; }
+}

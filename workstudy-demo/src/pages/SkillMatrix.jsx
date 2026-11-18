@@ -56,13 +56,17 @@ export default function SkillMatrix({ style }) {
       for (const [roundN, study] of Object.entries(studies)) {
         const obs = study?.obs || {}
         for (const [key, cell] of Object.entries(obs)) {
-          const m = Number(String(key).replace(/^M/, ''))
+          // key is 'M{machine}-{sl}' (per-process) or legacy 'M{machine}' (whole machine)
+          const [mPart, slPart] = String(key).replace(/^M/, '').split('-')
+          const m = Number(mPart)
           const assigned = cell?.op || machineWorker[m] || ''
           if (String(assigned) !== String(worker.id)) continue
           const avgRaw = avgOf(cell?.reads)
           if (avgRaw <= 0) continue
           const avg = round(avgRaw * ALLOWANCE, 3)   // average cycle time incl. 15% allowance
-          const procs = (mops[m] || []).map(sl => opBySl[sl]).filter(Boolean)
+          const procs = slPart != null
+            ? [opBySl[Number(slPart)]].filter(Boolean)
+            : (mops[m] || []).map(sl => opBySl[sl]).filter(Boolean)
           if (!procs.length) continue
           const smv = round(procs.reduce((s, p) => s + (p.smv || 0), 0), 3)
           const name = procs.map(p => p.name).join(' + ')

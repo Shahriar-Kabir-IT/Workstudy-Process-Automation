@@ -88,7 +88,9 @@ export default function ProductionPlan({ style }) {
     const e = entries[dt] || {}
     const plan = Number(e.plan) || 0, act = Number(e.actual) || 0
     pc += plan; ac += act
-    return { dt, raw: e, plan, act, planCum: pc, actCum: ac, planEff: eff(plan), actEff: eff(act), fri: isFriday(dt) }
+    // Actual Efficiency is entered manually (CR); falls back to the computed value if left blank
+    const actEff = (e.actEff != null && e.actEff !== '') ? Number(e.actEff) : eff(act)
+    return { dt, raw: e, plan, act, planCum: pc, actCum: ac, planEff: eff(plan), actEff, fri: isFriday(dt) }
   })
   const effChart = rows.map(r => ({ label: fmtDay(r.dt), planEff: r.planEff, actEff: r.actEff }))
   const avgPlanEff = (() => { const v = rows.map(r => r.planEff).filter(x => x > 0); return v.length ? round(v.reduce((a, b) => a + b, 0) / v.length, 1) : 0 })()
@@ -112,6 +114,7 @@ export default function ProductionPlan({ style }) {
       <div className="card card-pad pp-head">
         <Info k="Buyer" v={style.buyer || '—'} />
         <Info k="Style No" v={style.styleNo} />
+        <Info k="Product Category" v={style.category || '—'} />
         <Info k="Product" v={style.item} />
         <Info k="Ord. Qty" v={(style.order || 0).toLocaleString()} />
         <Info k="S.M.V." v={tSMV} />
@@ -162,7 +165,7 @@ export default function ProductionPlan({ style }) {
                     <td className="num mono" style={{ color: '#2563eb' }}>{r.planEff || ''}</td>
                     <td><input className="pp-in" type="number" value={r.raw.actual ?? ''} onChange={e => setEntry(r.dt, 'actual', e.target.value)} /></td>
                     <td className="num mono muted">{r.actCum || ''}</td>
-                    <td className="num mono" style={{ color: '#16a34a' }}>{r.actEff || ''}</td>
+                    <td><input className="pp-in" type="number" title="Actual efficiency % (manual — blank = auto)" placeholder={eff(r.act) || ''} value={r.raw.actEff ?? ''} onChange={e => setEntry(r.dt, 'actEff', e.target.value)} style={{ color: '#16a34a' }} /></td>
                     <td><input className="pp-in pp-rem" value={r.raw.remarks ?? (r.fri ? 'Friday - Weekly Holiday' : '')} placeholder={r.fri ? 'Friday - Weekly Holiday' : '—'} onChange={e => setEntry(r.dt, 'remarks', e.target.value)} /></td>
                   </tr>
                 ))}

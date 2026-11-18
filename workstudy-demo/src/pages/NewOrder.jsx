@@ -13,6 +13,7 @@ export default function NewOrder() {
   const [cats, setCats] = useState(CATEGORIES)
   const [f, setF] = useState({
     buyer: '', styleNo: '', item: '', category: CATEGORIES[0] || '', order: 20000, manpower: 50,
+    sizeBreakdown: '', fabricComposition: '',
   })
   const [err, setErr] = useState('')
   const set = (k, v) => setF(s => ({ ...s, [k]: v }))
@@ -36,6 +37,7 @@ export default function NewOrder() {
       factory: user.factory,                 // enforced server-side from the logged-in user
       styleNo: f.styleNo.trim(), item: f.item.trim(), category: f.category,
       buyer: f.buyer.trim(),
+      sizeBreakdown: f.sizeBreakdown.trim(), fabricComposition: f.fabricComposition.trim(),
       order: Number(f.order) || 0, manpower: Number(f.manpower) || 0, smv: 0,
       lines: [], floor: null, line: null, lineShape: null,   // assigned later in Line Layout (can be multiple, any floor)
       step: 2, status: 'Approved Sample', sampleApproved: false, obApproved: false, obVersion: 1, layoutVerified: false,
@@ -66,6 +68,8 @@ export default function NewOrder() {
                 <div className="field"><label>Buyer *</label><input className="inp" value={f.buyer} onChange={e => set('buyer', e.target.value)} placeholder="e.g. Bestseller" /></div>
                 <div className="field"><label>Style No. *</label><input className="inp" value={f.styleNo} onChange={e => set('styleNo', e.target.value)} placeholder="e.g. 10520" /></div>
                 <div className="field"><label>Item *</label><input className="inp" value={f.item} onChange={e => set('item', e.target.value)} placeholder="e.g. Cargo Pant" /></div>
+                <div className="field"><label>Size Breakdown</label><input className="inp" value={f.sizeBreakdown} onChange={e => set('sizeBreakdown', e.target.value)} placeholder="e.g. XS, S, M, L, XL, XXL" /></div>
+                <div className="field"><label>Fabric Composition</label><input className="inp" value={f.fabricComposition} onChange={e => set('fabricComposition', e.target.value)} placeholder="e.g. 100% Cotton" /></div>
                 <div className="field"><label>Product Category</label>
                   <select className="inp" value={f.category} onChange={e => set('category', e.target.value)}>{cats.map(c => <option key={c}>{c}</option>)}</select>
                 </div>

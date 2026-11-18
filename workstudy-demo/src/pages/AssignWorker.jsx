@@ -40,7 +40,8 @@ export default function AssignWorker({ style }) {
   }
 
   const line = style.layoutLine
-  const pitch = computeOB(ops, style.manpower).pitchTime
+  const ob = computeOB(ops, style.manpower)
+  const pitch = ob.pitchTime
   const allMachines = Object.keys(mops).map(Number).filter(m => (mops[m] || []).length).sort((a, b) => a - b)
   const nMach = (sl) => Object.values(mops).filter(l => l.includes(sl)).length || 1
   const loadOf = (m) => (mops[m] || []).reduce((s, sl) => s + (opBySl[sl]?.smv || 0) / nMach(sl), 0)
@@ -62,6 +63,11 @@ export default function AssignWorker({ style }) {
 
   const staffed = allMachines.filter(m => workers[m]).length
   const assignedAt = Object.fromEntries(Object.entries(workers).map(([mm, id]) => [id, mm]))   // operatorId → machine
+  // Line Target / hr = (Total Manpower × 60) ÷ Total SMV  (balanced line output, not the sum of stations)
+  const lineManpower = allMachines.length
+  const lineRaw = ob.totalSMV > 0 ? (lineManpower * 60) / ob.totalSMV : 0
+  const lineTgt100 = Math.round(lineRaw)
+  const lineTgt80 = Math.round(lineRaw * 0.8)
 
   // details grouped per machine (one operator does ALL processes on the machine)
   const groups = machines.map(m => {
@@ -75,9 +81,15 @@ export default function AssignWorker({ style }) {
     <div>
       <div className="page-head">
         <div><h1>👷 Assign Workers</h1><div className="sub">Staff each machine on the line · {lineOperators.length} operators on line {lineName}</div></div>
-        <button className="btn primary" onClick={() => { updateStyle(style.id, { machineWorker: workers, step: Math.max(style.step, 9), status: 'Cycle Time' }); nav(`/style/${style.id}/cycle`) }}>Next: Cycle Time →</button>
+        <button className="btn primary" disabled={staffed < allMachines.length} title={staffed < allMachines.length ? `Assign a worker to every station first (${staffed}/${allMachines.length})` : ''} onClick={() => { updateStyle(style.id, { machineWorker: workers, step: Math.max(style.step, 9), status: 'Cycle Time' }); nav(`/style/${style.id}/cycle`) }}>Next: Cycle Time →</button>
       </div>
       <div style={{ marginBottom: 14 }}><ProgressRail step={style.step} /></div>
+
+      <div className="card card-pad flex wrap" style={{ gap: 20, marginBottom: 14, fontSize: 13 }}>
+        <span><span className="muted">Buyer</span> <b>{style.buyer || '—'}</b></span>
+        <span><span className="muted">Style</span> <b>{style.styleNo}</b></span>
+        <span><span className="muted">Product Category</span> <b>{style.category || '—'}</b></span>
+      </div>
 
       {!lineOperators.length ? (
         <Note>No operators assigned to <b>line {lineName}</b>. <span style={{ color: '#2563eb', cursor: 'pointer', fontWeight: 600 }} onClick={() => nav('/operators')}>Upload / assign operators for this line →</span></Note>
@@ -101,7 +113,8 @@ export default function AssignWorker({ style }) {
         </div>
         <div className="aw-sum">
           <div><div className="aw-sum-n" style={{ color: staffed === allMachines.length ? '#16a34a' : '#d97706' }}>{staffed}/{allMachines.length}</div><div className="aw-sum-l">workers assigned</div></div>
-          <div><div className="aw-sum-n" style={{ color: '#2563eb' }}>{groups.reduce((s, g) => s + (g.cap || 0), 0).toLocaleString()}</div><div className="aw-sum-l">capacity pcs/hr</div></div>
+          <div><div className="aw-sum-n" style={{ color: '#2563eb' }}>{lineTgt100.toLocaleString()}</div><div className="aw-sum-l">Line Tgt @100% /hr</div></div>
+          <div><div className="aw-sum-n" style={{ color: '#7c3aed' }}>{lineTgt80.toLocaleString()}</div><div className="aw-sum-l">Line Tgt @80% /hr</div></div>
         </div>
       </div>
 
@@ -135,7 +148,7 @@ export default function AssignWorker({ style }) {
                   {candFor(m).map(o => {
                     const at = assignedAt[o.id]
                     const busy = at && String(at) !== String(m)
-                    return <option key={o.id} value={o.id}>{o.name} · {o.grade || '?'} · {o.machine || '—'}{busy ? ` — ⚠ already on W${at}` : ''}</option>
+                    return <option key={o.id} value={o.id}>{o.id} · {o.name}{o.grade ? ' · ' + o.grade : ''}{busy ? ` — ⚠ already on W${at}` : ''}</option>
                   })}
                 </select>
               </div>
@@ -161,7 +174,7 @@ export default function AssignWorker({ style }) {
                     <td><span className="muted" style={{ fontSize: 11.5 }}>{o?.section || '—'}</span></td>
                     <td><Badge tone={o?.machine === 'QC' ? 'violet' : o?.machine === 'Manual' || o?.machine === 'HP' ? 'gray' : 'blue'}>{o?.machine}</Badge></td>
                     <td className="num mono">{(o?.smv || 0).toFixed(2)}</td>
-                    {i === 0 ? <td rowSpan={g.list.length} style={{ verticalAlign: 'middle' }}>{g.operator ? <span><b>{g.operator.name}</b> <span className="muted" style={{ fontSize: 11 }}>· {g.operator.grade}</span></span> : <span className="muted">— unassigned —</span>}</td> : null}
+                    {i === 0 ? <td rowSpan={g.list.length} style={{ verticalAlign: 'middle' }}>{g.operator ? <span><b className="mono">{g.operator.id}</b> <span style={{ fontSize: 11.5 }}>· {g.operator.name}{g.operator.grade ? ' · ' + g.operator.grade : ''}</span></span> : <span className="muted">— unassigned —</span>}</td> : null}
                     {i === 0 ? <td className="num mono" rowSpan={g.list.length} style={{ verticalAlign: 'middle', color: '#16a34a', fontWeight: 600 }}>{g.cap != null ? g.cap.toLocaleString() : '—'}</td> : null}
                   </tr>
                 )

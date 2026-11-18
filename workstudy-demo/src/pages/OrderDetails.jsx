@@ -18,6 +18,8 @@ export default function OrderDetails({ style }) {
           <KV k="Style No." v={style.styleNo} />
           <KV k="Item" v={style.item} />
           <KV k="Product Category" v={style.category} />
+          <KV k="Size Breakdown" v={style.sizeBreakdown || <span className="muted">—</span>} />
+          <KV k="Fabric Composition" v={style.fabricComposition || <span className="muted">—</span>} />
           <KV k="Order Quantity" v={<b>{style.order.toLocaleString()} pcs</b>} />
         </Card>
         <Card title="Assignment">

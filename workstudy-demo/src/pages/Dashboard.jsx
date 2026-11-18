@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useStore } from '../store.jsx'
 import { Topbar } from '../components/Shell.jsx'
@@ -13,6 +14,9 @@ export default function Dashboard() {
   if (user.role === 'ADMIN') return <Navigate to="/admin/overview" />
   const styles = stylesForUser(user)
   const fac = getFactory(user.factory)
+  const [q, setQ] = useState('')
+  const needle = q.trim().toLowerCase()
+  const shown = needle ? styles.filter(s => [s.styleNo, s.item, s.buyer, s.category].some(v => (v || '').toLowerCase().includes(needle))) : styles
 
   const active = styles.length
   const pendingApprovals = styles.filter(s => !s.obApproved || !s.layoutVerified).length
@@ -45,7 +49,9 @@ export default function Dashboard() {
           </div>
 
           <div className="card">
-            <div className="card-head"><h3>Styles</h3><span className="hint">Click a style to open its 10-step flow</span></div>
+            <div className="card-head"><h3>Styles</h3>
+              <input className="inp" value={q} onChange={e => setQ(e.target.value)} placeholder="🔎 Search style / item / buyer…" style={{ height: 32, width: 260, maxWidth: '50vw' }} />
+            </div>
             <div className="table-wrap" style={{ border: 'none', borderRadius: 0 }}>
               <table>
                 <thead>
@@ -55,14 +61,14 @@ export default function Dashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {styles.length === 0 ? (
+                  {shown.length === 0 ? (
                     <tr><td colSpan={11}>
                       <div className="center muted" style={{ padding: '38px 0' }}>
-                        No styles yet. Click <b>➕ New Order</b> to create your first order.
+                        {needle ? <>No styles match “{q}”.</> : <>No styles yet. Click <b>➕ New Order</b> to create your first order.</>}
                       </div>
                     </td></tr>
                   ) : null}
-                  {styles.map(s => (
+                  {shown.map(s => (
                     <tr key={s.id} style={{ cursor: 'pointer' }} onClick={() => nav(`/style/${s.id}/${STEPS.find(x => x.n === s.step).key}`)}>
                       <td><b>{s.styleNo}</b> {s.isNew ? <Badge tone="green">New</Badge> : null}</td>
                       <td>{s.item}</td>

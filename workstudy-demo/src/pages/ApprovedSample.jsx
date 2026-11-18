@@ -59,11 +59,11 @@ export default function ApprovedSample({ style }) {
                 </div>
               ) : <div style={{ height: 160, borderRadius: 10, background: '#f8fafc', display: 'grid', placeItems: 'center', color: '#94a3b8' }}>No sample photos uploaded yet</div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(110px,1fr))', gap: 10 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(180px,1fr))', gap: 10 }}>
                 {list.map((src, i) => (
-                  <div key={i} style={{ position: 'relative', borderRadius: 9, overflow: 'hidden', border: '1px solid var(--line)', aspectRatio: '1', background: '#0f172a' }}>
+                  <div key={i} style={{ position: 'relative', borderRadius: 9, overflow: 'hidden', border: '1px solid var(--line)', aspectRatio: '3/4', background: '#0f172a' }}>
                     <img src={src} alt={`Sample ${i + 1}`} onClick={() => setLightbox(src)}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover', cursor: 'zoom-in', display: 'block' }} />
+                      style={{ width: '100%', height: '100%', objectFit: 'contain', cursor: 'zoom-in', display: 'block' }} />
                     {canManage ? <button onClick={() => removePhoto(style.id, i)} title="Remove"
                       style={{ position: 'absolute', top: 4, right: 4, width: 22, height: 22, borderRadius: '50%', border: 'none', background: 'rgba(15,23,42,.75)', color: '#fff', fontSize: 13, lineHeight: 1, cursor: 'pointer' }}>×</button> : null}
                     <span style={{ position: 'absolute', bottom: 4, left: 6, fontSize: 10, color: '#fff', textShadow: '0 1px 2px #000' }}>#{i + 1}</span>

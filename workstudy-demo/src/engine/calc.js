@@ -87,6 +87,7 @@ export function computeOB(ops, manpower) {
     pitchTime: round(pt, 3),
     target100: lineTargetPerHour(manpower, tSMV, 1),
     target80: lineTargetPerHour(manpower, tSMV, 0.8),
+    target70: lineTargetPerHour(manpower, tSMV, 0.7),
     perDay80: targetPerDay(lineTargetPerHour(manpower, tSMV, 0.8)),
   }
 }
