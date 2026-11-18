@@ -273,7 +273,7 @@ export default function LineLayout({ style }) {
     const sign = (a, b, c) => `<div class="pl-sign"><div><div class="pl-line"></div>${a}</div><div><div class="pl-line"></div>${b}</div><div><div class="pl-line"></div>${c}</div></div>`
     const cover = `<div class="pl-cover"><div class="pl-frame"><div class="pl-title"><h1>${fac}</h1><h2>Line Layout</h2></div><table class="pl-info">${coverRows}</table><div style="margin-top:90px">${sign('Prepared By', 'Verified By', 'Line Chief')}</div><div style="margin-top:60px">${sign('Production Manager', 'Workstudy Manager', 'GM')}</div></div></div>`
     const machRows = machineSummary.map(([t, c]) => `<tr><td>${t}</td><td class="num">${c}</td></tr>`).join('') + `<tr class="tot"><td>TOTAL</td><td class="num">${machineSummary.reduce((s, [, c]) => s + c, 0)}</td></tr>`
-    const panelRows = kv2([['Machine Operator’s', manCount.operator], ['Helper’s', manCount.helper], ['Ironer’s', manCount.ironer], ['Total Manpower', totalManpower], ['SMV', ob.totalSMV], ['Pitch Time', round(ob.totalSMV / (totalManpower || 1), 2)], ['Line TGT @100% Efficiency', lineTgt100], ['Line TGT @80% Efficiency', lineTgt80], ['Prepared On', dateStr], ['Prepared By', ''], ['Approved By', '']])
+    const panelRows = kv2([['Machine Operator’s', manCount.operator], ['Helper’s', manCount.helper], ['Ironer’s', manCount.ironer], ['Total Manpower', totalManpower], ['SMV', ob.totalSMV], ['Pitch Time', pitch.toFixed(2)], ['Line TGT @100% Efficiency', lineTgt100], ['Line TGT @80% Efficiency', lineTgt80], ['Prepared On', dateStr], ['Prepared By', ''], ['Approved By', '']])
     const summary = `<div class="pl-page"><div class="pl-title2"><b>${fac}</b> &middot; Line Layout</div><div class="pl-sum-grid"><div><table class="pl-tbl"><tr><td class="k">Style No / Name</td><td>${style.styleNo || ''}</td></tr><tr><td class="k">Style Description</td><td>${style.item || ''}</td></tr><tr><td class="k">Buyer</td><td>${style.buyer || ''}</td></tr></table><table class="pl-tbl" style="margin-top:10px"><thead><tr><th>Machine Type</th><th>No of Machines</th></tr></thead><tbody>${machRows}</tbody></table></div><div><table class="pl-tbl">${panelRows}</table></div></div></div>`
     const css = `@page{margin:10mm}body{margin:0;background:#fff;color:#14303f}.no-print{display:none!important}
       .pl-cover{page-break-after:always;font-family:Georgia,'Times New Roman',serif}
@@ -452,7 +452,7 @@ export default function LineLayout({ style }) {
                   {manCount.quality ? <tr><td>Quality</td><td className="num"><b>{manCount.quality}</b></td></tr> : null}
                   <tr style={{ background: '#f1f5f9', fontWeight: 800 }}><td>Total Manpower</td><td className="num">{totalManpower}</td></tr>
                   <tr><td>Total SMV</td><td className="num mono">{ob.totalSMV}</td></tr>
-                  <tr><td>Pitch Time</td><td className="num mono">{round(ob.totalSMV / (totalManpower || 1), 3)}</td></tr>
+                  <tr><td>Pitch Time</td><td className="num mono">{pitch.toFixed(2)}</td></tr>
                   <tr><td>Line Target @100% /hr</td><td className="num mono" style={{ color: '#16a34a', fontWeight: 700 }}>{lineTgt100}</td></tr>
                   <tr><td>Line Target @80% /hr</td><td className="num mono" style={{ color: '#65a30d', fontWeight: 700 }}>{lineTgt80}</td></tr>
                 </tbody>
