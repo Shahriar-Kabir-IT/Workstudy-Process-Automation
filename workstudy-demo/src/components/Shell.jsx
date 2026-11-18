@@ -17,7 +17,6 @@ export function Topbar({ crumbs }) {
         <div className="av" style={{ background: user.color }}>{user.initials}</div>
         <div className="meta"><b>{user.name}</b><span>{user.roleLabel}</span></div>
       </div>
-      <button className="logout no-print" onClick={() => window.print()} title="Print this page" style={{ marginRight: 6 }}>🖨 Print</button>
       <button className="logout no-print" onClick={() => { logout(); nav('/login') }}>Logout</button>
     </div>
   )
