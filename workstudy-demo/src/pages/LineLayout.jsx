@@ -35,7 +35,8 @@ export default function LineLayout({ style }) {
   }
 
   const ob = computeOB(ops, style.manpower)
-  const pitch = ob.pitchTime
+  // On the Line Layout page the balancing takt uses manpower: Pitch = Total SMV ÷ Manpower
+  const pitch = style.manpower > 0 ? round(ob.totalSMV / style.manpower, 3) : 0
   const opBySl = Object.fromEntries(ops.map(o => [o.sl, o]))
   const sections = [...new Set(ops.map(o => (o.section || '').trim()).filter(Boolean))]
   const poolOps = section ? ops.filter(o => (o.section || '').trim() === section) : ops
@@ -338,7 +339,14 @@ export default function LineLayout({ style }) {
         <span><span className="muted">Style No</span> <b>{style.styleNo}</b></span>
         <span><span className="muted">Style Description</span> <b>{style.item || '—'}</b></span>
         <span><span className="muted">Total SMV</span> <b>{ob.totalSMV}</b></span>
-        <span><span className="muted">Manpower</span> <b>{style.manpower}</b></span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <span className="muted">Manpower</span>
+          <input type="number" min="1" step="1" value={style.manpower ?? ''}
+            disabled={locked}
+            onChange={e => updateStyle(style.id, { manpower: Math.max(1, Math.round(Number(e.target.value) || 0)) })}
+            style={{ width: 64, padding: '3px 6px', border: '1px solid var(--line)', borderRadius: 6, fontWeight: 700, fontSize: 13 }} />
+        </span>
+        <span><span className="muted">Pitch Time</span> <b style={{ color: '#387090' }}>{pitch.toFixed(2)}</b> <span className="muted">min (Total SMV ÷ Manpower)</span></span>
       </div>
 
       {obPending ? <Note tone="">🔒 An OB change request is <b>pending approval</b> — the layout is read-only and stays on the last approved OB until the change is approved.</Note> : null}
@@ -378,7 +386,7 @@ export default function LineLayout({ style }) {
       <div className="card mt">
         <div className="card-head no-print">
           <h3><span style={{ background: line ? '#387090' : '#cbd5e1', color: '#fff', borderRadius: 6, padding: '1px 8px', fontSize: 13, marginRight: 8 }}>2</span>Assign processes to machines</h3>
-          {line ? <span className="hint">Pitch time <b style={{ color: '#387090' }}>{pitch.toFixed(2)} min</b> (Total SMV ÷ {ob.opCount} ops) · band ±{BAND}</span> : null}
+          {line ? <span className="hint">Pitch time <b style={{ color: '#387090' }}>{pitch.toFixed(2)} min</b> (Total SMV ÷ {style.manpower} MP) · band ±{BAND}</span> : null}
         </div>
         {!line ? (
           <div className="card-pad"><Note tone="blue">👆 Select a line above. Its machine stations will appear here to drag processes onto.</Note></div>
