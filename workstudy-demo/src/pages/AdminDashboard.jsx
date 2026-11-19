@@ -180,7 +180,10 @@ function SmvEditor({ allStyles, updateStyle }) {
   const ops = style ? (style.ops || []) : []
   const total = Number(style?.smvAllowance) || 0
 
-  const ob = style ? computeOB(ops, style.manpower) : null
+  // live effective ops (base × process allowance × total allowance) — the tiles read these so they
+  // always match the per-row and bottom-total figures, regardless of what's currently stored.
+  const liveOps = style ? applyAllowances(ops, total) : []
+  const ob = style ? computeOB(liveOps, style.manpower) : null
   // persist: recompute every op's smv from base × its own allowance × the style-wide total allowance
   const persist = (nextOps, nextTotal = total) =>
     updateStyle(style.id, { ops: applyAllowances(nextOps, nextTotal), smvAllowance: Math.max(0, Number(nextTotal) || 0) })
@@ -194,6 +197,14 @@ function SmvEditor({ allStyles, updateStyle }) {
   const baseTotal = round(ops.reduce((s, o) => s + baseSmvOf(o), 0), 2)
   const effTotal = round(ops.reduce((s, o) => s + liveEff(o), 0), 2)
   const rows = [...ops].sort((a, b) => (a.sl || 0) - (b.sl || 0))   // same serial order as the OB
+
+  // self-heal: if a style's stored smv drifts from the current formula (e.g. saved under older
+  // rounding), rewrite it once so the OB and every other dashboard match the editor.
+  const storedTotal = round(ops.reduce((s, o) => s + (Number(o.smv) || 0), 0), 2)
+  useEffect(() => {
+    if (style && ops.length && Math.abs(storedTotal - effTotal) > 0.005) persist(ops)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [style?.id, total, storedTotal, effTotal])
 
   if (!style) return (
     <>
