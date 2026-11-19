@@ -84,7 +84,8 @@
   ],
   "permissions": {
     "obPrepare": [
-      "WSE"
+      "WSE",
+      "ADMIN"
     ],
     "sampleManage": [
       "WSE"

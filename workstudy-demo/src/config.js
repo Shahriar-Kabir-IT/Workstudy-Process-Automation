@@ -64,7 +64,7 @@ export const DEFAULTS = {
 
   // ---- RBAC: which roles may do each action (add/remove roles freely) ----
   permissions: {
-    obPrepare: ['WSE'],                 // may add/edit operations & build the OB
+    obPrepare: ['WSE', 'ADMIN'],        // may add/edit operations & build the OB (ADMIN: SMV editor)
     sampleManage: ['WSE'],              // may upload / manage sample photos
     sampleDecide: ['WSE', 'ASST_MGR_CENTRAL', 'ADMIN'],
     obApprove: ['ASST_MGR_CENTRAL', 'ADMIN'],

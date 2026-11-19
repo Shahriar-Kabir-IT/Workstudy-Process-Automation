@@ -6,7 +6,7 @@ export const ROLES = ['WSE', 'ASST_MGR_CENTRAL', 'SR_MGR', 'ADMIN', 'SYSADMIN']
 // which roles may perform each action
 export const PERMISSIONS = {
   orderCreate:   ['WSE', 'ADMIN'],                         // create a new order/style
-  obPrepare:     ['WSE'],                                  // add/edit operations, build the OB
+  obPrepare:     ['WSE', 'ADMIN'],                         // add/edit operations, build the OB (ADMIN: SMV editor)
   sampleManage:  ['WSE'],                                  // upload / manage sample photos
   sampleDecide:  ['WSE', 'ASST_MGR_CENTRAL', 'ADMIN'],     // approve/reject the sample
   obApprove:     ['ASST_MGR_CENTRAL', 'ADMIN'],
