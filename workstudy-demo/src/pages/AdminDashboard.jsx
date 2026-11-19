@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, Fragment } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { NavLink, useParams, Navigate } from 'react-router-dom'
 import { useStore } from '../store.jsx'
 import { Topbar } from '../components/Shell.jsx'
@@ -180,12 +180,12 @@ function SmvEditor({ allStyles, updateStyle }) {
   const ops = style ? (style.ops || []) : []
   const total = Number(style?.smvAllowance) || 0
 
+  const ob = style ? computeOB(ops, style.manpower) : null
   // persist: recompute every op's smv from base × its own allowance × the style-wide total allowance
   const persist = (nextOps, nextTotal = total) =>
     updateStyle(style.id, { ops: applyAllowances(nextOps, nextTotal), smvAllowance: Math.max(0, Number(nextTotal) || 0) })
   const setBase = (sl, v) => persist(ops.map(o => o.sl === sl ? { ...o, baseSmv: Math.max(0, Number(v) || 0) } : o))
   const setProc = (sl, v) => persist(ops.map(o => o.sl === sl ? { ...o, procAllowance: Math.max(0, Number(v) || 0) } : o))
-  const setSection = (sec, v) => persist(ops.map(o => (o.section || '—') === sec ? { ...o, procAllowance: Math.max(0, Number(v) || 0) } : o))
   const setTotal = (v) => persist(ops, v)
   const resetAll = () => persist(ops.map(o => ({ ...o, procAllowance: 0 })), 0)
 
@@ -193,10 +193,7 @@ function SmvEditor({ allStyles, updateStyle }) {
   const liveEff = (o) => effSmv(baseSmvOf(o), o.procAllowance, total)
   const baseTotal = round(ops.reduce((s, o) => s + baseSmvOf(o), 0), 2)
   const effTotal = round(ops.reduce((s, o) => s + liveEff(o), 0), 2)
-
-  // group rows by section, preserving first-seen order
-  const sections = []
-  ops.forEach(o => { const sec = o.section || '—'; let g = sections.find(x => x.sec === sec); if (!g) { g = { sec, rows: [] }; sections.push(g) } g.rows.push(o) })
+  const rows = [...ops].sort((a, b) => (a.sl || 0) - (b.sl || 0))   // same serial order as the OB
 
   if (!style) return (
     <>
@@ -227,11 +224,17 @@ function SmvEditor({ allStyles, updateStyle }) {
         </div>
       </div>
 
+      <div className="grid cols-4" style={{ marginBottom: 12 }}>
+        <Stat label="Machine SMV" value={ob.machineSMV} unit="min" accent="#2563eb" />
+        <Stat label="Manual SMV" value={ob.manualSMV} unit="min" accent="#0891b2" foot="Helper + Ironman" />
+        <Stat label="Total SMV" value={ob.totalSMV} unit="min" accent="#14303f" />
+        <Stat label="Pitch Time" value={ob.pitchTime} unit="min" foot={`Total SMV ÷ ${ob.opCount} ops (excl. NNVA & QC)`} />
+      </div>
       <div className="grid cols-4" style={{ marginBottom: 14 }}>
-        <Stat label="Base Total SMV" value={baseTotal} unit="min" />
-        <Stat label="Total Allowance" value={total} unit="%" accent="#d97706" />
-        <Stat label="Effective Total SMV" value={effTotal} unit="min" accent="#2563eb" />
-        <Stat label="Added" value={round(effTotal - baseTotal, 2)} unit="min" accent="#16a34a" />
+        <Stat label="Target @100%" value={ob.target100} unit="pcs/hr" accent="#16a34a" />
+        <Stat label="Target @80%" value={ob.target80} unit="pcs/hr" accent="#65a30d" />
+        <Stat label="Target @70%" value={ob.target70} unit="pcs/hr" accent="#d97706" />
+        <Stat label="Operations" value={ops.length} accent="#7c3aed" foot="in this OB" />
       </div>
 
       <div className="card">
@@ -246,35 +249,25 @@ function SmvEditor({ allStyles, updateStyle }) {
               </tr>
             </thead>
             <tbody>
-              {sections.map(g => (
-                <Fragment key={g.sec}>
-                  <tr style={{ background: '#f1f5f9' }}>
-                    <td></td>
-                    <td colSpan={2} style={{ fontWeight: 800, color: '#334155' }}>{g.sec}</td>
-                    <td className="num muted" style={{ fontSize: 12 }}>Σ {round(g.rows.reduce((s, o) => s + baseSmvOf(o), 0), 2)}</td>
-                    <td className="num">
-                      <span className="flex" style={{ gap: 4, justifyContent: 'flex-end', alignItems: 'center' }}>
-                        <span className="muted" style={{ fontSize: 11 }}>set all →</span>
-                        <NumInput value={''} onCommit={v => setSection(g.sec, v)} step={0.5} width={64} />
-                      </span>
-                    </td>
-                    <td className="num mono" style={{ fontWeight: 700 }}>{round(g.rows.reduce((s, o) => s + liveEff(o), 0), 2)}</td>
+              {rows.map(o => {
+                const base = baseSmvOf(o), eff = liveEff(o), adj = (Number(o.procAllowance) || 0) > 0 || total > 0
+                return (
+                  <tr key={o.sl}>
+                    <td className="muted">{o.sl}</td>
+                    <td>{o.name}{o.nnva ? <span className="muted"> · NNVA</span> : null}{o.qc ? <span className="muted"> · QC</span> : null}</td>
+                    <td><Badge tone="gray">{o.machine}</Badge></td>
+                    <td className="num"><NumInput value={base} onCommit={v => setBase(o.sl, v)} /></td>
+                    <td className="num"><NumInput value={Number(o.procAllowance) || 0} onCommit={v => setProc(o.sl, v)} step={0.5} /></td>
+                    <td className="num mono" style={{ fontWeight: 700, color: adj && eff !== base ? '#2563eb' : undefined }}>{eff.toFixed(2)}</td>
                   </tr>
-                  {g.rows.map(o => {
-                    const base = baseSmvOf(o), eff = liveEff(o), adj = (Number(o.procAllowance) || 0) > 0 || total > 0
-                    return (
-                      <tr key={o.sl}>
-                        <td className="muted">{o.sl}</td>
-                        <td>{o.name}{o.nnva ? <span className="muted"> · NNVA</span> : null}{o.qc ? <span className="muted"> · QC</span> : null}</td>
-                        <td><Badge tone="gray">{o.machine}</Badge></td>
-                        <td className="num"><NumInput value={base} onCommit={v => setBase(o.sl, v)} /></td>
-                        <td className="num"><NumInput value={Number(o.procAllowance) || 0} onCommit={v => setProc(o.sl, v)} step={0.5} /></td>
-                        <td className="num mono" style={{ fontWeight: 700, color: adj && eff !== base ? '#2563eb' : undefined }}>{eff.toFixed(2)}</td>
-                      </tr>
-                    )
-                  })}
-                </Fragment>
-              ))}
+                )
+              })}
+              <tr style={{ background: '#f1f5f9', fontWeight: 800 }}>
+                <td></td><td>TOTAL SMV</td><td></td>
+                <td className="num mono">{baseTotal.toFixed(2)}</td>
+                <td className="num muted">{total > 0 ? `+${total}%` : ''}</td>
+                <td className="num mono" style={{ color: '#2563eb' }}>{effTotal.toFixed(2)}</td>
+              </tr>
             </tbody>
           </table>
         </div>
