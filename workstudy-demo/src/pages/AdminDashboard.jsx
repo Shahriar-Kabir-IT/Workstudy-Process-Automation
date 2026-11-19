@@ -36,9 +36,14 @@ export default function AdminLayout() {
     else if (s.ops?.length && !s.obApproved) actions.push({ s, label: 'Approve / reject OB', tone: 'blue', type: 'ob' })
     if (s.obApproved && !s.layoutVerified && linesOf(s).length) actions.push({ s, label: 'Verify layout', tone: 'cyan', type: 'verify' })
   })
-  const decide = (a, ok) => {
+  const decide = (a, ok, extra = null) => {
     const s = a.s, by = user.name
-    if (a.type === 'ob') updateStyle(s.id, ok ? { obApproved: true, approvedBy: by, step: Math.max(s.step, 5), status: 'Line Layout', obRejected: null, changeRequest: null, obHistory: appendVersion(s, by) } : { obApproved: false, step: 3, status: 'Operation Breakdown', obRejected: { by } })
+    if (a.type === 'ob') {
+      const approvedOps = extra && extra.ops ? extra.ops : s.ops   // approve the admin-edited OB when provided
+      updateStyle(s.id, ok
+        ? { ...(extra || {}), obApproved: true, approvedBy: by, step: Math.max(s.step, 5), status: 'Line Layout', obRejected: null, changeRequest: null, obHistory: appendVersion({ ...s, ops: approvedOps }, by) }
+        : { obApproved: false, step: 3, status: 'Operation Breakdown', obRejected: { by } })
+    }
     else if (a.type === 'change') updateStyle(s.id, { changeRequest: { ...s.changeRequest, status: ok ? 'approved' : 'rejected', decidedBy: by } })
     else if (a.type === 'verify') updateStyle(s.id, ok ? { layoutVerified: true, step: Math.max(s.step, 7), status: 'Assign Workers' } : { layoutVerified: false, step: 5, status: 'Line Layout' })
     setAct(null)
@@ -349,17 +354,31 @@ function Row({ k, v }) { return <div className="kv"><span className="k">{k}</spa
 
 function ApprovalModal({ act, photos, onDecide, onClose }) {
   const s = act.s
-  const ob = s.ops?.length ? computeOB(s.ops, s.manpower) : null
+  const editable = act.type === 'ob'                       // OB approval: let the super admin edit SMV before approving
+  const [draftOps, setDraftOps] = useState(() => (s.ops || []).map(o => ({ ...o })))
+  const [draftTotal, setDraftTotal] = useState(Number(s.smvAllowance) || 0)
+  const liveOps = editable ? applyAllowances(draftOps, draftTotal) : (s.ops || [])
+  const ob = s.ops?.length ? computeOB(liveOps, s.manpower) : null
   const pics = photos[s.id] || []
-  const title = { sample: 'Approve Sample', ob: 'Approve Operation Breakdown', change: 'OB Change Request', verify: 'Verify Line Layout' }[act.type]
-  const lines = linesOf(s)
+  const title = { sample: 'Approve Sample', ob: 'Review & Approve Operation Breakdown', change: 'OB Change Request', verify: 'Verify Line Layout' }[act.type]
   const prev = prevApprovedOps(s)
   const isRevision = (s.obVersion || 1) > 1 && prev
+
+  const setBase = (sl, v) => setDraftOps(prev => prev.map(o => o.sl === sl ? { ...o, baseSmv: Math.max(0, Number(v) || 0) } : o))
+  const setProc = (sl, v) => setDraftOps(prev => prev.map(o => o.sl === sl ? { ...o, procAllowance: Math.max(0, Number(v) || 0) } : o))
+  const resetDraft = () => { setDraftOps((s.ops || []).map(o => ({ ...o, procAllowance: 0 }))); setDraftTotal(0) }
+  const rows = [...draftOps].sort((a, b) => (a.sl || 0) - (b.sl || 0))
+  const baseTotal = round(draftOps.reduce((a, o) => a + baseSmvOf(o), 0), 2)
+  const effTotal = round(draftOps.reduce((a, o) => a + effSmv(baseSmvOf(o), o.procAllowance, draftTotal), 0), 2)
+  const edited = editable && (draftTotal !== (Number(s.smvAllowance) || 0) || draftOps.some(o => baseSmvOf(o) !== baseSmvOf((s.ops || []).find(x => x.sl === o.sl) || {}) || (Number(o.procAllowance) || 0) !== (Number(((s.ops || []).find(x => x.sl === o.sl) || {}).procAllowance) || 0)))
+  const approve = () => onDecide(act, true, editable ? { ops: applyAllowances(draftOps, draftTotal), smvAllowance: Math.max(0, Number(draftTotal) || 0) } : null)
+
+  const full = editable   // OB review takes the whole page
   return (
-    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(2,8,23,.55)', display: 'grid', placeItems: 'center', zIndex: 60, padding: 24 }}>
-      <div onClick={e => e.stopPropagation()} className="card" style={{ width: 'min(920px, 96vw)', maxHeight: '90vh', overflow: 'auto' }}>
-        <div className="card-head"><h3>{title}</h3><span className="hint">{s.styleNo} · {s.item} · {s.buyer} · {s.factory}</span></div>
-        <div className="card-pad">
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: full ? '#f1f5f9' : 'rgba(2,8,23,.55)', display: full ? 'block' : 'grid', placeItems: full ? undefined : 'center', zIndex: 60, padding: full ? 0 : 24, overflow: 'auto' }}>
+      <div onClick={e => e.stopPropagation()} className="card" style={full ? { width: '100%', minHeight: '100vh', borderRadius: 0, display: 'flex', flexDirection: 'column' } : { width: 'min(960px, 96vw)', maxHeight: '90vh', overflow: 'auto' }}>
+        <div className="card-head" style={full ? { position: 'sticky', top: 0, background: '#fff', zIndex: 2 } : undefined}><h3>{title}</h3><span className="hint">{s.styleNo} · {s.item} · {s.buyer} · {s.factory}</span></div>
+        <div className="card-pad" style={full ? { flex: 1 } : undefined}>
           {act.type === 'sample' ? (pics.length ? (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(120px,1fr))', gap: 10 }}>
               {pics.map((src, i) => <img key={i} src={src} alt={'sample ' + i} style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', borderRadius: 9, border: '1px solid var(--line)' }} />)}
@@ -367,18 +386,81 @@ function ApprovalModal({ act, photos, onDecide, onClose }) {
           {act.type === 'change' ? <Note tone="blue">WSE <b>{s.changeRequest?.by}</b> requested to change the approved OB (v{s.obVersion || 1}). Approving unlocks a new editable version for re-approval.</Note> : null}
           {(act.type === 'ob' || act.type === 'change') && ob ? (
             <>
-              <div className="grid cols-4" style={{ margin: '12px 0' }}>
-                <Stat label="Total SMV" value={ob.totalSMV} unit="min" accent="#2563eb" /><Stat label="Pitch" value={ob.pitchTime} unit="min" />
-                <Stat label="Target@100%" value={ob.target100} unit="pcs/hr" accent="#16a34a" /><Stat label="Version" value={`v${s.obVersion || 1}`} />
+              <div className="card card-pad flex wrap" style={{ gap: 22, margin: '12px 0', fontSize: 14 }}>
+                <span><span className="muted">Buyer</span> <b>{s.buyer || '—'}</b></span>
+                <span><span className="muted">Style</span> <b>{s.styleNo || '—'}</b></span>
+                <span><span className="muted">Product Category</span> <b>{s.category || '—'}</b></span>
+                <span><span className="muted">Version</span> <b>v{s.obVersion || 1}</b></span>
+              </div>
+              <div className="grid cols-4" style={{ marginBottom: 12 }}>
+                <Stat label="Machine SMV" value={ob.machineSMV} unit="min" accent="#2563eb" />
+                <Stat label="Manual SMV" value={ob.manualSMV} unit="min" accent="#0891b2" foot="Helper + Ironman" />
+                <Stat label="Total SMV" value={ob.totalSMV} unit="min" accent="#14303f" />
+                <Stat label="Pitch Time" value={ob.pitchTime} unit="min" foot={`Total SMV ÷ ${ob.opCount} ops (excl. NNVA & QC)`} />
+              </div>
+              <div className="grid cols-4" style={{ marginBottom: 14 }}>
+                <Stat label="Target @100%" value={ob.target100} unit="pcs/hr" accent="#16a34a" />
+                <Stat label="Target @80%" value={ob.target80} unit="pcs/hr" accent="#65a30d" />
+                <Stat label="Target @70%" value={ob.target70} unit="pcs/hr" accent="#d97706" />
+                <Stat label="Operations" value={(s.ops || []).length} accent="#7c3aed" foot="in this OB" />
               </div>
               {isRevision ? (
                 <div style={{ marginBottom: 14 }}>
                   <div className="muted" style={{ fontSize: 12, fontWeight: 700, margin: '4px 0 8px' }}>🔁 CHANGES vs APPROVED v{s.obVersion - 1}</div>
-                  <ObDiff prev={prev} next={s.ops} prevLabel={`v${s.obVersion - 1}`} nextLabel={`v${s.obVersion}`} />
+                  <ObDiff prev={prev} next={liveOps} prevLabel={`v${s.obVersion - 1}`} nextLabel={`v${s.obVersion}`} />
                 </div>
               ) : null}
-              <div className="muted" style={{ fontSize: 12, fontWeight: 700, margin: '4px 0 8px' }}>OPERATION BREAKDOWN · v{s.obVersion || 1}</div>
-              <ObTable ob={ob} maxHeight={320} />
+
+              {editable ? (
+                <>
+                  <div className="flex wrap" style={{ gap: 14, alignItems: 'flex-end', margin: '6px 0 10px' }}>
+                    <div className="muted" style={{ fontSize: 12, fontWeight: 700 }}>OPERATION BREAKDOWN · v{s.obVersion || 1} <span style={{ fontWeight: 500 }}>· edit SMV / allowance below, then approve</span></div>
+                    <div style={{ flex: 1 }} />
+                    <div className="field" style={{ width: 150 }}>
+                      <label>Total allowance (%)</label>
+                      <NumInput value={draftTotal} onCommit={setDraftTotal} step={0.5} width={130} />
+                    </div>
+                    <button className="btn" onClick={resetDraft} title="Clear allowances (base SMV kept)">↺ Reset</button>
+                  </div>
+                  <div className="table-wrap" style={{ maxHeight: 320, overflow: 'auto' }}>
+                    <table>
+                      <thead><tr>
+                        <th style={{ width: 36 }}>#</th><th>Process</th><th>Machine</th>
+                        <th className="num" style={{ width: 100 }}>Base SMV</th>
+                        <th className="num" style={{ width: 110 }}>Allowance %</th>
+                        <th className="num" style={{ width: 100 }}>Effective</th>
+                      </tr></thead>
+                      <tbody>
+                        {rows.map(o => {
+                          const base = baseSmvOf(o), eff = effSmv(base, o.procAllowance, draftTotal), adj = (Number(o.procAllowance) || 0) > 0 || draftTotal > 0
+                          return (
+                            <tr key={o.sl}>
+                              <td className="muted">{o.sl}</td>
+                              <td>{o.name}{o.nnva ? <span className="muted"> · NNVA</span> : null}{o.qc ? <span className="muted"> · QC</span> : null}</td>
+                              <td><Badge tone="gray">{o.machine}</Badge></td>
+                              <td className="num"><NumInput value={base} onCommit={v => setBase(o.sl, v)} /></td>
+                              <td className="num"><NumInput value={Number(o.procAllowance) || 0} onCommit={v => setProc(o.sl, v)} step={0.5} /></td>
+                              <td className="num mono" style={{ fontWeight: 700, color: adj && eff !== base ? '#2563eb' : undefined }}>{eff.toFixed(2)}</td>
+                            </tr>
+                          )
+                        })}
+                        <tr style={{ background: '#f1f5f9', fontWeight: 800 }}>
+                          <td></td><td>TOTAL SMV</td><td></td>
+                          <td className="num mono">{baseTotal.toFixed(2)}</td>
+                          <td className="num muted">{draftTotal > 0 ? `+${draftTotal}%` : ''}</td>
+                          <td className="num mono" style={{ color: '#2563eb' }}>{effTotal.toFixed(2)}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <Note tone="blue">Edit any base SMV or add a process / total allowance, then <b>Approve</b>. Your changes are saved with the approval and sync to every dashboard.</Note>
+                </>
+              ) : (
+                <>
+                  <div className="muted" style={{ fontSize: 12, fontWeight: 700, margin: '4px 0 8px' }}>OPERATION BREAKDOWN · v{s.obVersion || 1}</div>
+                  <ObTable ob={ob} maxHeight={320} />
+                </>
+              )}
               {(s.obHistory || []).length ? (
                 <div style={{ marginTop: 14 }}>
                   <div className="muted" style={{ fontSize: 12, fontWeight: 700, margin: '4px 0 8px' }}>VERSION HISTORY</div>
@@ -396,10 +478,10 @@ function ApprovalModal({ act, photos, onDecide, onClose }) {
               <MachineLayoutView style={s} maxHeight={360} />
             </>) : null}
         </div>
-        <div className="card-head" style={{ borderTop: '1px solid var(--line)', borderBottom: 'none', justifyContent: 'flex-end', gap: 8 }}>
+        <div className="card-head" style={{ borderTop: '1px solid var(--line)', borderBottom: 'none', justifyContent: 'flex-end', gap: 8, ...(full ? { position: 'sticky', bottom: 0, background: '#fff', zIndex: 2 } : {}) }}>
           <button className="btn" onClick={onClose}>Close</button>
           <button className="btn" style={{ color: '#dc2626', borderColor: '#fecaca' }} onClick={() => onDecide(act, false)}>✕ Reject</button>
-          <button className="btn primary" onClick={() => onDecide(act, true)}>✓ {act.type === 'verify' ? 'Verify' : 'Approve'}</button>
+          <button className="btn primary" onClick={approve}>✓ {act.type === 'verify' ? 'Verify' : edited ? 'Change & Approve' : 'Approve'}</button>
         </div>
       </div>
     </div>
