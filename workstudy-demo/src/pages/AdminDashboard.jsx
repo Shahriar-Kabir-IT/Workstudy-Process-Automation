@@ -235,6 +235,12 @@ function SmvEditor({ allStyles, updateStyle }) {
         </div>
       </div>
 
+      <div className="card card-pad flex wrap" style={{ gap: 22, marginBottom: 14, fontSize: 14 }}>
+        <span><span className="muted">Buyer</span> <b>{style.buyer || '—'}</b></span>
+        <span><span className="muted">Style</span> <b>{style.styleNo || '—'}</b></span>
+        <span><span className="muted">Product Category</span> <b>{style.category || '—'}</b></span>
+      </div>
+
       <div className="grid cols-4" style={{ marginBottom: 12 }}>
         <Stat label="Machine SMV" value={ob.machineSMV} unit="min" accent="#2563eb" />
         <Stat label="Manual SMV" value={ob.manualSMV} unit="min" accent="#0891b2" foot="Helper + Ironman" />
