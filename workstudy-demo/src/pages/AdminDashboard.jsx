@@ -1,11 +1,11 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef, Fragment } from 'react'
 import { NavLink, useParams, Navigate } from 'react-router-dom'
 import { useStore } from '../store.jsx'
 import { Topbar } from '../components/Shell.jsx'
 import { Stat, Badge, Note } from '../components/ui.jsx'
 import { BarChart } from '../components/charts.jsx'
 import { FACTORIES, floorsForFactory, lineCount, STEPS, linesOf } from '../data/seed.js'
-import { computeOB } from '../engine/calc.js'
+import { computeOB, baseSmvOf, effSmv, applyAllowances, round } from '../engine/calc.js'
 import { ObTable, ObVersionList, ObDiff } from '../components/ObReview.jsx'
 import { MachineLayoutView } from '../components/MachineLayout.jsx'
 import { appendVersion, prevApprovedOps } from '../engine/obdiff.js'
@@ -16,6 +16,7 @@ const TABS = [
   { key: 'overview', label: '📊 Overview' },
   { key: 'approvals', label: '✅ Approvals' },
   { key: 'styles', label: '🧵 Styles' },
+  { key: 'smv', label: '✎ SMV Editor' },
   { key: 'lines', label: '🏭 Lines' },
 ]
 
@@ -66,6 +67,7 @@ export default function AdminLayout() {
           {section === 'overview' && <Overview user={user} kpis={kpis} allStyles={allStyles} />}
           {section === 'approvals' && <Approvals actions={actions} onOpen={setAct} />}
           {section === 'styles' && <Styles allStyles={allStyles} onOpen={setDetail} />}
+          {section === 'smv' && <SmvEditor allStyles={allStyles} updateStyle={updateStyle} />}
           {section === 'lines' && <Lines occ={occ} onOpenLine={setLineView} />}
         </div>
       </div>
@@ -155,6 +157,129 @@ function Styles({ allStyles, onOpen }) {
           </table>
         </div>
       </div>
+    </>
+  )
+}
+
+// buffered number input so decimals (e.g. 0.35) type naturally while still committing live
+function NumInput({ value, onCommit, step = 0.01, min = 0, width = 74, disabled }) {
+  const [txt, setTxt] = useState(value == null ? '' : String(value))
+  const ext = useRef(value)
+  useEffect(() => { if (value !== ext.current) { ext.current = value; setTxt(value == null ? '' : String(value)) } }, [value])
+  return (
+    <input className="inp" type="number" min={min} step={step} value={txt} disabled={disabled}
+      onChange={e => { const v = e.target.value; setTxt(v); const n = v === '' ? 0 : Number(v); if (isFinite(n)) { ext.current = Math.max(min, n); onCommit(Math.max(min, n)) } }}
+      style={{ width, padding: '4px 7px', textAlign: 'right' }} />
+  )
+}
+
+function SmvEditor({ allStyles, updateStyle }) {
+  const withOps = allStyles.filter(s => (s.ops || []).length)
+  const [sid, setSid] = useState('')
+  const style = withOps.find(s => s.id === sid) || withOps[0]
+  const ops = style ? (style.ops || []) : []
+  const total = Number(style?.smvAllowance) || 0
+
+  // persist: recompute every op's smv from base × its own allowance × the style-wide total allowance
+  const persist = (nextOps, nextTotal = total) =>
+    updateStyle(style.id, { ops: applyAllowances(nextOps, nextTotal), smvAllowance: Math.max(0, Number(nextTotal) || 0) })
+  const setBase = (sl, v) => persist(ops.map(o => o.sl === sl ? { ...o, baseSmv: Math.max(0, Number(v) || 0) } : o))
+  const setProc = (sl, v) => persist(ops.map(o => o.sl === sl ? { ...o, procAllowance: Math.max(0, Number(v) || 0) } : o))
+  const setSection = (sec, v) => persist(ops.map(o => (o.section || '—') === sec ? { ...o, procAllowance: Math.max(0, Number(v) || 0) } : o))
+  const setTotal = (v) => persist(ops, v)
+  const resetAll = () => persist(ops.map(o => ({ ...o, procAllowance: 0 })), 0)
+
+  // live effective values (reflect current inputs even before a keystroke is flushed)
+  const liveEff = (o) => effSmv(baseSmvOf(o), o.procAllowance, total)
+  const baseTotal = round(ops.reduce((s, o) => s + baseSmvOf(o), 0), 2)
+  const effTotal = round(ops.reduce((s, o) => s + liveEff(o), 0), 2)
+
+  // group rows by section, preserving first-seen order
+  const sections = []
+  ops.forEach(o => { const sec = o.section || '—'; let g = sections.find(x => x.sec === sec); if (!g) { g = { sec, rows: [] }; sections.push(g) } g.rows.push(o) })
+
+  if (!style) return (
+    <>
+      <div className="page-head"><div><h1>✎ SMV Editor</h1><div className="sub">Super-admin SMV &amp; allowance control</div></div></div>
+      <div className="card card-pad"><Note tone="blue">No style has an Operation Breakdown yet. Create an OB first, then adjust its SMV here.</Note></div>
+    </>
+  )
+
+  return (
+    <>
+      <div className="page-head">
+        <div><h1>✎ SMV Editor</h1><div className="sub">Super-admin control · edit any process SMV, add process-wise or total allowance — changes apply to every dashboard</div></div>
+      </div>
+
+      <div className="card card-pad" style={{ marginBottom: 14 }}>
+        <div className="flex wrap" style={{ gap: 18, alignItems: 'flex-end' }}>
+          <div className="field" style={{ minWidth: 280 }}>
+            <label>Style</label>
+            <select className="inp" value={style.id} onChange={e => setSid(e.target.value)}>
+              {withOps.map(s => <option key={s.id} value={s.id}>{s.styleNo} — {s.item} · {s.buyer} ({s.factory})</option>)}
+            </select>
+          </div>
+          <div className="field" style={{ width: 170 }}>
+            <label>Total allowance (%)</label>
+            <NumInput value={total} onCommit={setTotal} step={0.5} width={150} />
+          </div>
+          <button className="btn" onClick={resetAll} title="Set every allowance back to 0 (base SMV kept)">↺ Reset allowances</button>
+        </div>
+      </div>
+
+      <div className="grid cols-4" style={{ marginBottom: 14 }}>
+        <Stat label="Base Total SMV" value={baseTotal} unit="min" />
+        <Stat label="Total Allowance" value={total} unit="%" accent="#d97706" />
+        <Stat label="Effective Total SMV" value={effTotal} unit="min" accent="#2563eb" />
+        <Stat label="Added" value={round(effTotal - baseTotal, 2)} unit="min" accent="#16a34a" />
+      </div>
+
+      <div className="card">
+        <div className="table-wrap" style={{ border: 'none', borderRadius: 0 }}>
+          <table>
+            <thead>
+              <tr>
+                <th style={{ width: 40 }}>#</th><th>Process</th><th>Machine</th>
+                <th className="num" style={{ width: 110 }}>Base SMV</th>
+                <th className="num" style={{ width: 120 }}>Allowance %</th>
+                <th className="num" style={{ width: 110 }}>Effective SMV</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sections.map(g => (
+                <Fragment key={g.sec}>
+                  <tr style={{ background: '#f1f5f9' }}>
+                    <td></td>
+                    <td colSpan={2} style={{ fontWeight: 800, color: '#334155' }}>{g.sec}</td>
+                    <td className="num muted" style={{ fontSize: 12 }}>Σ {round(g.rows.reduce((s, o) => s + baseSmvOf(o), 0), 2)}</td>
+                    <td className="num">
+                      <span className="flex" style={{ gap: 4, justifyContent: 'flex-end', alignItems: 'center' }}>
+                        <span className="muted" style={{ fontSize: 11 }}>set all →</span>
+                        <NumInput value={''} onCommit={v => setSection(g.sec, v)} step={0.5} width={64} />
+                      </span>
+                    </td>
+                    <td className="num mono" style={{ fontWeight: 700 }}>{round(g.rows.reduce((s, o) => s + liveEff(o), 0), 2)}</td>
+                  </tr>
+                  {g.rows.map(o => {
+                    const base = baseSmvOf(o), eff = liveEff(o), adj = (Number(o.procAllowance) || 0) > 0 || total > 0
+                    return (
+                      <tr key={o.sl}>
+                        <td className="muted">{o.sl}</td>
+                        <td>{o.name}{o.nnva ? <span className="muted"> · NNVA</span> : null}{o.qc ? <span className="muted"> · QC</span> : null}</td>
+                        <td><Badge tone="gray">{o.machine}</Badge></td>
+                        <td className="num"><NumInput value={base} onCommit={v => setBase(o.sl, v)} /></td>
+                        <td className="num"><NumInput value={Number(o.procAllowance) || 0} onCommit={v => setProc(o.sl, v)} step={0.5} /></td>
+                        <td className="num mono" style={{ fontWeight: 700, color: adj && eff !== base ? '#2563eb' : undefined }}>{eff.toFixed(2)}</td>
+                      </tr>
+                    )
+                  })}
+                </Fragment>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <Note tone="blue" >Effective SMV = Base SMV × (1 + process allowance %) × (1 + total allowance %). The effective value is saved to the operation, so the OB, Line Layout, Cycle Time, approvals and every dashboard immediately show the adjusted SMV.</Note>
     </>
   )
 }

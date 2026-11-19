@@ -18,6 +18,19 @@ export const round = (n, d = 2) => {
   return safe(Math.round(n * f) / f)
 }
 
+// ---- SMV allowance (Super Admin SMV editor) ----
+// A process's effective SMV = base SMV × (1 + process allowance%) × (1 + total allowance%).
+// The effective value is what gets stored in o.smv, so every dashboard (which reads o.smv
+// through computeOB) reflects the admin's adjustment automatically.
+export const baseSmvOf = (o) => (o && o.baseSmv != null ? Number(o.baseSmv) : Number(o?.smv) || 0)
+export const effSmv = (base, procPct, totalPct) =>
+  round((Number(base) || 0) * (1 + (Number(procPct) || 0) / 100) * (1 + (Number(totalPct) || 0) / 100), 2)
+// Recompute o.smv for every op from its base SMV, its own allowance and the style-wide total allowance.
+export const applyAllowances = (ops, totalPct) => ops.map(o => {
+  const base = baseSmvOf(o)
+  return { ...o, baseSmv: base, smv: effSmv(base, o.procAllowance, totalPct) }
+})
+
 // ---- totals ----
 export const totalSMV = (ops) => round(ops.reduce((s, o) => s + (o.smv || 0), 0), 2)
 export const machineSMV = (ops) => round(ops.filter(o => !o.manual).reduce((s, o) => s + (o.smv || 0), 0), 2)
