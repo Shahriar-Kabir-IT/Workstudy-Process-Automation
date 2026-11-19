@@ -23,8 +23,10 @@ export const round = (n, d = 2) => {
 // The effective value is what gets stored in o.smv, so every dashboard (which reads o.smv
 // through computeOB) reflects the admin's adjustment automatically.
 export const baseSmvOf = (o) => (o && o.baseSmv != null ? Number(o.baseSmv) : Number(o?.smv) || 0)
+// Kept at 4 decimals internally so a small % on sub-1.00 SMVs isn't lost to rounding;
+// per-row displays format to 2dp, and the total (sum → round 2dp) stays accurate.
 export const effSmv = (base, procPct, totalPct) =>
-  round((Number(base) || 0) * (1 + (Number(procPct) || 0) / 100) * (1 + (Number(totalPct) || 0) / 100), 2)
+  round((Number(base) || 0) * (1 + (Number(procPct) || 0) / 100) * (1 + (Number(totalPct) || 0) / 100), 4)
 // Recompute o.smv for every op from its base SMV, its own allowance and the style-wide total allowance.
 export const applyAllowances = (ops, totalPct) => ops.map(o => {
   const base = baseSmvOf(o)
